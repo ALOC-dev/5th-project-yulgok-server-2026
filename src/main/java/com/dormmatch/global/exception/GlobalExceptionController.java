@@ -1,9 +1,11 @@
 package com.dormmatch.global.exception;
 
 
+import com.dormmatch.global.response.GlobalApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +23,10 @@ public class GlobalExceptionController {
             )
     )
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handleException(Exception e){
+    public ResponseEntity<GlobalApiResponse<?>> handleException(Exception e){
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        return new ResponseEntity<>(com.dormmatch.global.response.ApiResponse.error(status, "서버 내부 오류가 발생하였습니다."))
+        return ResponseEntity
+                .status(status)
+                .body(GlobalApiResponse.error(status, "서버 내부 오류입니다."));
     }
-
 }
