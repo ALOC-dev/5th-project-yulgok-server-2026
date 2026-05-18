@@ -10,23 +10,67 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentConversionNotSupportedException;
+
+import java.util.List;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionController {
 
-    @ApiResponses(
-            value = @ApiResponse(
-                responseCode = "500", description = "INTERNAL_SERVER_ERROR"
-            )
-    )
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<GlobalApiResponse<?>> handleException(Exception e){
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+
         return ResponseEntity
                 .status(status)
-                .body(GlobalApiResponse.error(status, "서버 내부 오류입니다."));
+                .body(GlobalApiResponse.error(status, "서버 내부 오류입니다.", null));
     }
+
+
+    // Jakarta Validation(@NonNull, @NotEmpty, @NotBlank 등)
+    // 컨트롤러가 JSON을 DTO 객체에 매핑할 때 값이 null이면 MethodArgumentNotValidException 발생
+    // 그에 해당하는 Handler로 어떤 부분이 null인지도 확인
+    // 400 Bad Request
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<GlobalApiResponse<?>> handleValidationException(MethodArgumentNotValidException e){
+
+        log.warn("Validation failed: {}", e.getMessage());
+
+        List<GlobalApiResponse.ErrorResponse> errors = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fe -> new GlobalApiResponse.ErrorResponse(
+                        fe.getField(),           // "bio"
+                        fe.getDefaultMessage()   // "100자를 초과할 수 없습니다."
+                ))
+                .toList();
+
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        return ResponseEntity
+                .status(status)
+                .body(GlobalApiResponse.error(status, "필수 항목 누락 / 값 범위 초과", errors));
+    }
+
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<GlobalApiResponse<?>> handleBusinessException(BusinessException e){
+
+        log.warn("BusinessException: {}", e.getMessage());
+
+        ErrorCode errorCode = e.getErrorCode();
+
+        HttpStatus httpStatus = errorCode.getHttpStatus();
+
+        return ResponseEntity
+                .status(httpStatus)
+                .body(GlobalApiResponse.error(httpStatus, errorCode.getMessage(), null));
+
+    }
+
 }
