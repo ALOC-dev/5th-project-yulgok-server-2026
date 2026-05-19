@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController("/api/surveys")
 public class SurveyController {
 
-//    private SurveyService surveyService;
-//
-//    @Autowired
-//    public SurveyController(SurveyService surveyService){
-//        this.surveyService = surveyService;
-//    }
+    private SurveyService surveyService;
+
+    @Autowired
+    public SurveyController(SurveyService surveyService){
+        this.surveyService = surveyService;
+    }
 
 
     @ApiResponses({
@@ -40,9 +40,10 @@ public class SurveyController {
 
         UserPreferences userPreferences = UserPreferencesDtoMapper.toEntity(requestDto);
 
+        surveyService.getSurveyStatus(123L,requestDto);
 
         return ResponseEntity.status(200)
-                .body(GlobalApiResponse.success(HttpStatus.OK,null, null));
+                .body(GlobalApiResponse.success(HttpStatus.OK,"설문이 제출되었습니다. 매칭 대기 상태로 전환됩니다.", null));
     }
 
 }

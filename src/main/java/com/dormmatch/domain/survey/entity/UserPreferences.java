@@ -179,6 +179,7 @@ public class UserPreferences {
         this.lifestyleVector[23] = normalize(this.studyLocation, 1, 3);
     }
 
+    // 벡터 정규화
     private double normalize(Integer value, int min, int max){
 
         if(value == null)   return 0.0;

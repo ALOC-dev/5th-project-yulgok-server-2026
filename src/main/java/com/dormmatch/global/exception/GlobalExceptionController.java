@@ -22,8 +22,13 @@ import java.util.List;
 public class GlobalExceptionController {
 
 
+    // Handler 처리되지 않은 다른 모든 예외들이 발생시키는 예외 처리용
+    // 500 Internal Server Error
     @ExceptionHandler(Exception.class)
     public ResponseEntity<GlobalApiResponse<?>> handleException(Exception e){
+
+        log.warn(e.getMessage());
+
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         return ResponseEntity
@@ -58,6 +63,9 @@ public class GlobalExceptionController {
     }
 
 
+    // Business 영역에서 발생하는 예외 Handler 처리
+    // ErrorCode에 정의된 Code들로 BusinessException을 발생시키면 동작
+    // 정의된 각 Http Status 대로 처리
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<GlobalApiResponse<?>> handleBusinessException(BusinessException e){
 

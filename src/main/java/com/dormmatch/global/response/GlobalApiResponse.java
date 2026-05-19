@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class GlobalApiResponse<T> {
 
     private final int status;
@@ -24,13 +24,14 @@ public class GlobalApiResponse<T> {
     public static <T> GlobalApiResponse<T> success(HttpStatus status, String message, T data){
         return GlobalApiResponse.<T>builder()
                 .status(status.value())
+                .code(status.name())
                 .message(message)
                 .data(data)
                 .build();
     }
 
-    public static GlobalApiResponse<?> error(HttpStatus status, String message, List<ErrorResponse> errors){
-        return GlobalApiResponse.builder()
+    public static GlobalApiResponse<Void> error(HttpStatus status, String message, List<ErrorResponse> errors){
+        return GlobalApiResponse.<Void>builder()
                 .status(status.value())
                 .code(status.name())
                 .message(message)
