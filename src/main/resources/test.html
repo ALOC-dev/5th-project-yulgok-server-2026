@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>웹소켓 메아리 테스트</title>
+    <!-- STOMP 라이브러리 가져오기 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+    <h2>STOMP 메아리 테스트</h2>
+    <button onclick="connect()">1. 서버 연결하기 (Connect)</button>
+    <br><br>
+    <input type="text" id="messageInput" placeholder="보낼 메시지 입력">
+    <button onclick="sendMessage()">2. 메시지 보내기 (PUB)</button>
+    
+    <h3>받은 메시지 (SUB)</h3>
+    <ul id="messages"></ul>
+
+    <script>
+        let stompClient = null;
+
+        function connect() {
+            // 🌟 1. 백엔드와 똑같이 주소를 맞춰주고 SockJS 번역기 사용
+            let socket = new SockJS('http://localhost:8080/ws-stomp');
+            stompClient = Stomp.over(socket);
+
+            // 🌟 2. 연결 시도! (에러가 나면 왜 났는지 콘솔에 띄우도록 수정함)
+            stompClient.connect({}, function (frame) {
+                console.log('연결 성공: ' + frame);
+                alert("연결 성공!!!"); // 드디어 이 창을 보게 될 거야!
+
+                stompClient.subscribe('/topic/room/test', function (message) {
+                    let receivedData = JSON.parse(message.body);
+                    let li = document.createElement('li');
+                    li.textContent = receivedData.sender + " : " + receivedData.content;
+                    document.getElementById('messages').appendChild(li);
+                });
+            }, function(error) {
+                // 만약 실패하면 뭐가 문제인지 정확하게 콘솔에 찍힘
+                console.error("연결 에러 원인: ", error);
+            });
+        }
+
+        function sendMessage() {
+            let content = document.getElementById('messageInput').value;
+            let chatMessage = { sender: "백엔드리드", content: content };
+            
+            // 3. 백엔드 컨트롤러(/app/chat.send)로 메시지 쏘기!
+            stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+        }
+    </script>
+</body>
+</html>
