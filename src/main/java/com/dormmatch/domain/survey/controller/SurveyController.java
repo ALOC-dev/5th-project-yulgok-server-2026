@@ -8,6 +8,7 @@ import com.dormmatch.domain.survey.util.UserPreferencesDtoMapper;
 import com.dormmatch.global.response.GlobalApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +37,8 @@ public class SurveyController {
             @ApiResponse(responseCode = "409", description = "이미 설문 제출 완료 상태")
     })
     @PostMapping("/api/surveys")
-    public ResponseEntity<GlobalApiResponse<?>> saveUserPreferences(@RequestBody UserPreferencesRequestDto requestDto){
+    public ResponseEntity<GlobalApiResponse<?>> saveUserPreferences(
+            @Valid @RequestBody UserPreferencesRequestDto requestDto){
 
         UserPreferences userPreferences = UserPreferencesDtoMapper.toEntity(requestDto);
 
@@ -45,5 +47,18 @@ public class SurveyController {
         return ResponseEntity.status(200)
                 .body(GlobalApiResponse.success(HttpStatus.OK,"설문이 제출되었습니다. 매칭 대기 상태로 전환됩니다.", null));
     }
+
+//    @ApiResponses({
+//            @ApiResponse(responseCode = "200", description = "설문 내용 조회 성공"),
+//            @ApiResponse(responseCode = "401", description = "인증 토큰 없음"),
+//            @ApiResponse(responseCode = "403", description = "기숙사 인증 미완료"),
+//            @ApiResponse(responseCode = "404", description = "설문 제출 내역 없음"),
+//    })
+//    @GetMapping("/api/surveys/me")
+//    public ResponseEntity<GlobalApiResponse<?>> getUserPreferences(
+//            @AuthenticationPrincipal CustomUserDetails userDetails
+//    ){
+//
+//    }
 
 }
