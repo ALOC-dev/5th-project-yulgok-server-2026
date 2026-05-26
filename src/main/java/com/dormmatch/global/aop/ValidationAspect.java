@@ -81,6 +81,16 @@ public class ValidationAspect {
 
     }
 
+
+    // 인증서 인증
+    // @RequiresCertification
+    @Before("@annotation(com.dormmatch.global.aop.RequiresCertification)")
+    public void checkCertification(JoinPoint joinPoint){
+        Long userId = extractUserId(joinPoint);
+
+
+    }
+
     // 매개변수로 들어오는 userId 확인
     public static Long extractUserId(JoinPoint joinPoint){
         for(Object args : joinPoint.getArgs()) {
