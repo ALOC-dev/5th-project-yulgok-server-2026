@@ -5,6 +5,7 @@ import com.dormmatch.domain.survey.dto.UserPreferencesRequestDto;
 import com.dormmatch.domain.survey.dto.UserPreferencesResponseDto;
 import com.dormmatch.domain.survey.entity.UserPreferences;
 import com.dormmatch.domain.survey.repository.UserPreferencesRepository;
+import com.dormmatch.domain.survey.util.UserPreferencesDtoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +21,11 @@ public class SurveyService {
     }
 
     @Transactional
-    public UserPreferencesResponseDto getSurveyStatus(Long userId, UserPreferencesRequestDto requestDto){
+    public UserPreferencesResponseDto getSurveyStatus(Long userId){
 
+        UserPreferences userPreferences = userPreferencesRepository.findByUserId(userId).get();
 
-        return new UserPreferencesResponseDto();
+        return UserPreferencesDtoMapper.toDto(userPreferences);
     }
 
     @Transactional

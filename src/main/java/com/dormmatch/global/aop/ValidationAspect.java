@@ -64,11 +64,11 @@ public class ValidationAspect {
         log.debug("[AuthAspect] userId: {}, method: {}",
                 userId, joinPoint.getSignature().getName());
 
-        AuthRole[] authRole = requiresAuth.roles();
-        if (authRole.length == 0) return;
-
         Users user = usersRepository.findById(userId)
                 .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        AuthRole[] authRole = requiresAuth.roles();
+        if (authRole.length == 0) return;
 
         boolean hasRole = Arrays.stream(authRole)
                 .anyMatch(role -> role.name().equals(user.getRole()));
