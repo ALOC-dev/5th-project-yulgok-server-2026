@@ -1,10 +1,13 @@
 package com.dormmatch.domain.survey.service;
 
+import com.dormmatch.domain.survey.dto.SurveyAnswers;
 import com.dormmatch.domain.survey.dto.UserPreferencesRequestDto;
 import com.dormmatch.domain.survey.dto.UserPreferencesResponseDto;
+import com.dormmatch.domain.survey.entity.UserPreferences;
 import com.dormmatch.domain.survey.repository.UserPreferencesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SurveyService {
@@ -16,10 +19,29 @@ public class SurveyService {
         this.userPreferencesRepository = userPreferencesRepository;
     }
 
+    @Transactional
     public UserPreferencesResponseDto getSurveyStatus(Long userId, UserPreferencesRequestDto requestDto){
 
 
         return new UserPreferencesResponseDto();
+    }
+
+    @Transactional
+    public void saveSurveyStatus(Long userId, UserPreferencesRequestDto requestDto){
+        UserPreferences userPreferences = userPreferencesRepository.findByUserId(userId)
+                .orElseThrow(()->new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
+        SurveyAnswers surveyAnswers = userPreferences.getAnswers();
+
+        surveyAnswers.setBedtime(requestDto.getAnswers().getBedtime());
+        surveyAnswers.setSnoring(requestDto.getAnswers().getSnoring());
+        surveyAnswers.setSleepTalking(requestDto.getAnswers().getSleepTalking());
+        surveyAnswers.setOrganizingStyle(requestDto.getAnswers().getOrganizingStyle());
+        surveyAnswers.setEatingInRoom(requestDto.getAnswers().getEatingInRoom());
+        surveyAnswers.setTemperaturePreference(requestDto.getAnswers().getTemperaturePreference());
+        surveyAnswers.setShowerFrequency(requestDto.getAnswers().getShowerFrequency());
+        surveyAnswers.setSpeakerStyle(requestDto.getAnswers().getSpeakerStyle());
+        surveyAnswers.setCallInRoom(requestDto.getAnswers().getCallInRoom());
     }
 
 }

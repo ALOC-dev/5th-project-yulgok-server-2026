@@ -5,6 +5,7 @@ import com.dormmatch.domain.survey.dto.UserPreferencesResponseDto;
 import com.dormmatch.domain.survey.entity.UserPreferences;
 import com.dormmatch.domain.survey.service.SurveyService;
 import com.dormmatch.domain.survey.util.UserPreferencesDtoMapper;
+import com.dormmatch.global.aop.RequiresAuth;
 import com.dormmatch.global.response.GlobalApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -37,6 +38,7 @@ public class SurveyController {
             @ApiResponse(responseCode = "409", description = "이미 설문 제출 완료 상태")
     })
     @PostMapping("/api/surveys")
+    @RequiresAuth
     public ResponseEntity<GlobalApiResponse<?>> saveUserPreferences(
             @Valid @RequestBody UserPreferencesRequestDto requestDto){
 
@@ -55,6 +57,8 @@ public class SurveyController {
 //            @ApiResponse(responseCode = "404", description = "설문 제출 내역 없음"),
 //    })
 //    @GetMapping("/api/surveys/me")
+//    @RequiresAuth
+//    @RequiresSurvey
 //    public ResponseEntity<GlobalApiResponse<?>> getUserPreferences(
 //            @AuthenticationPrincipal CustomUserDetails userDetails
 //    ){
