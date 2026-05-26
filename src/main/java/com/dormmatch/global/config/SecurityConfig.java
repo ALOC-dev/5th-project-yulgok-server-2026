@@ -11,18 +11,13 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // CSRF 차단 해제 (API 서버니까)
+                .formLogin(form -> form.disable()) // 🌟 중요: 스프링 기본 로그인 폼 화면 꺼버리기!
+                .httpBasic(basic -> basic.disable()) // 기본 HTTP 로그인창 꺼버리기
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/api/auth/kakao/login",
-                                "/api/auth/refresh"
-                        ).permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll() // 임시로 모두 허용 후 나중에 JWT 필터 연결
                 );
 
         return http.build();
