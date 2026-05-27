@@ -15,7 +15,7 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
     @Query("""
     SELECT m FROM MatchRequests m 
     WHERE (m.sender.id = :senderId OR m.receiver.id = :receiverId) 
-    AND m.status = :statuses
+    AND m.status IN :statuses
     """)
     List<MatchRequests> findByConditions(@Param("senderId") Long senderId,
                                          @Param("receiverId") Long receiverId,
@@ -34,4 +34,5 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
             @Param("userId") Long userId,
             @Param("status") MatchStatus status
     );
+    List<MatchRequests> findAllByStatus(MatchStatus status);
 }

@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class MatchRequests {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "match_request_id")
     private Long id;
 
@@ -36,7 +37,7 @@ public class MatchRequests {
     private UserPreferences senderPreferences;
 
     @Column
-    private Long matchPercentage;
+    private Double matchPercentage;
 
     @Column(nullable = false)
     private MatchStatus status;
@@ -55,5 +56,9 @@ public class MatchRequests {
     @PreUpdate
     protected void onUpdate() {
         this.matchedAt = LocalDateTime.now();
+    }
+
+    public void updateStatus(MatchStatus status) {
+        this.status = status;
     }
 }

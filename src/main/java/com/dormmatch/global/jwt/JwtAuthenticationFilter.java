@@ -36,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             Claims claims = jwtTokenProvider.parseClaims(token);
-            String userId = claims.getSubject();
+            Long userId = Long.valueOf(claims.getSubject());
             String role = claims.get("role", String.class);
 
             // 인증된 로컬 사용자 ID를 Spring Security 컨텍스트에 저장한다.

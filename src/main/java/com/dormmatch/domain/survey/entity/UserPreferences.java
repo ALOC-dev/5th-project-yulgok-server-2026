@@ -96,4 +96,8 @@ public class UserPreferences {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    public void updateIsMatched() {
+        this.isCompleted = true;
+    }
+
 }

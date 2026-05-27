@@ -1,11 +1,9 @@
 package com.dormmatch.domain.matching.dto;
 
 import com.dormmatch.domain.matching.entity.MatchStatus;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+@Getter
 @Setter
 @Builder
 @AllArgsConstructor
@@ -32,10 +30,9 @@ public class MatchingResponseDto {
     String studentId;
 
     // 매칭 점수
-    Long matchPercentage;
+    Double matchPercentage;
 
     // 매칭 상태
     MatchStatus matchStatus;
-
 
 }

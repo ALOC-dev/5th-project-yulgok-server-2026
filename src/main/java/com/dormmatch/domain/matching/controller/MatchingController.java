@@ -15,9 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -51,15 +49,29 @@ public class MatchingController {
     }
 
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Matching request created successfully"),
+            @ApiResponse(responseCode = "201", description = "Matching request updated successfully"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Survey not completed"),
             @ApiResponse(responseCode = "409", description = "Matching request already exists")
     })
     @RequiresAuth   @RequiresCertification  @RequiresSurvey
-    @PostMapping("/api/matching/requests")
-    public ResponseEntity<GlobalApiResponse<?>> createMatchRequest(){
-        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"",null));
+    @PatchMapping("/api/matching/requests")
+    public ResponseEntity<GlobalApiResponse<?>> sendHeartToReceiver(
+            @AuthenticationPrincipal Long userId,
+            @RequestBody MatchingRequestDto requestDto
+    ){
+
+        if(requestDto.getMatchStatus().equals("REJECT")){
+            matchingService.rejectHeart(userId, requestDto.getReceiverId());
+            return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"하트 거절 성공",null));
+        }
+
+        String success = matchingService.sendHeartToReceiver(userId, requestDto.getReceiverId());
+
+        if(success.equals("SENT"))
+            return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"하트 전송 성공",null));
+        else
+            return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"매칭 수락 성공",null));
     }
 
 }
