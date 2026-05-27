@@ -22,7 +22,7 @@ public class JwtTokenProvider {
 
     @PostConstruct
     void init() {
-        // jjwt에서 HMAC 키를 만들 수 있도록 secret 값은 Base64 인코딩 문자열이어야 한다.
+        // jwt에서 HMAC 키를 만들 수 있도록 secret 값은 Base64 인코딩 문자열이어야 한다.
         this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecret()));
     }
 

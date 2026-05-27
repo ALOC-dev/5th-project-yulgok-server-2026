@@ -2,8 +2,9 @@ package com.dormmatch.domain.auth.controller;
 
 import com.dormmatch.domain.auth.dto.LoginResponseDto;
 import com.dormmatch.domain.auth.service.AuthService;
-import com.dormmatch.global.response.ApiResponse;
+import com.dormmatch.global.response.GlobalApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,8 +19,8 @@ public class AuthController {
     private final AuthService authService;
 
     @GetMapping("/kakao/callback")
-    public ResponseEntity<ApiResponse<LoginResponseDto>> kakaoCallback(@RequestParam("code") String code) {
+    public ResponseEntity<GlobalApiResponse<LoginResponseDto>> kakaoCallback(@RequestParam("code") String code) {
         LoginResponseDto loginResponse = authService.loginOrRegister(code);
-        return ResponseEntity.ok(ApiResponse.success(loginResponse));
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,null, loginResponse));
     }
 }

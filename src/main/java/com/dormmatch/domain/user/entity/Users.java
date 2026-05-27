@@ -1,9 +1,11 @@
 package com.dormmatch.domain.user.entity;
 
+import com.github.f4b6a3.ulid.UlidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -13,6 +15,9 @@ public class Users {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(unique = true, updatable = false)
+    private String publicId;
 
     @Column(nullable = false, unique = true)
     private String oauthId;
@@ -43,6 +48,9 @@ public class Users {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        if(this.publicId == null) {
+            this.publicId = UlidCreator.getUlid().toString();
+        }
     }
 
     @PreUpdate

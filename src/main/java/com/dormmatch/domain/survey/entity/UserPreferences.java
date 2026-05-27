@@ -79,8 +79,14 @@ public class UserPreferences {
 
     // 메타
 
+    // 설문 완료 여부
     @Column(name = "is_completed", nullable = false)
     private Boolean isCompleted = false;
+
+
+    // 매칭 성공 여부
+    @Column(name = "is_matched", nullable = false)
+    private Boolean isMatched = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
