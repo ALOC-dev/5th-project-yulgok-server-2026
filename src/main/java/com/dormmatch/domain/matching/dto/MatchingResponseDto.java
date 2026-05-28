@@ -27,7 +27,6 @@ public class MatchingResponseDto {
 
     // 학과, 학번
     String department;
-    String studentId;
 
     // 매칭 점수
     Double matchPercentage;

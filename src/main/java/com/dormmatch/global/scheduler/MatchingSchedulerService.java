@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -55,24 +56,42 @@ public class MatchingSchedulerService {
                     userPreferences.getSmokingStatus(),
                     gender,
                     vector
-            );;
+            );
 
-            if (matchedIds.isEmpty()) continue;
+            List<Long> finalMatchedIds = new ArrayList<Long>(matchedIds);
 
             if (matchedIds.size() < 3) {
+                List<Long> remainedMatchedUserIds = userPreferencesRepository.findRemainedMatchedUserIds(
+                        me.getId(),
+                        finalMatchedIds.isEmpty() ? List.of(-1L):matchedIds,
+                        3 - matchedIds.size(),
+                        gender,
+                        vector
+                );
 
+                finalMatchedIds.addAll(remainedMatchedUserIds);
             }
 
+            if(finalMatchedIds.isEmpty()) continue;
+
             // 3. MatchRequests 생성
-            List<MatchRequests> requests = matchedIds.stream()
-                    .map(receiverId -> MatchRequests.builder()
-                            .sender(me)
-                            .receiver(userRepository.findById(receiverId).get())
-                            .status(MatchStatus.RECOMMENDED)
-                            .senderPreferences(userPreferences)
-                            .receiverPreferences(userPreferencesRepository.findByUserId(receiverId).get())
-                            .matchPercentage(getDistance(userPreferences.getLifestyleVector(), userPreferencesRepository.findByUserId(receiverId).get().getLifestyleVector()))
-                            .build())
+            List<MatchRequests> requests = finalMatchedIds.stream()
+                    .map(receiverId -> {
+                        UserPreferences receiverPrefs = userPreferencesRepository
+                                .findByUserId(receiverId).get();
+
+                        return MatchRequests.builder()
+                                .sender(me)
+                                .receiver(receiverPrefs.getUser())
+                                .status(MatchStatus.RECOMMENDED)
+                                .senderPreferences(userPreferences)
+                                .receiverPreferences(receiverPrefs)
+                                .matchPercentage(getDistance(
+                                        userPreferences.getLifestyleVector(),
+                                        receiverPrefs.getLifestyleVector()
+                                ))
+                                .build();
+                    })
                     .toList();
 
             matchRepository.saveAll(requests);

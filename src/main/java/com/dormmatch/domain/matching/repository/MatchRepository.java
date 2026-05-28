@@ -25,6 +25,8 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
 
     List<MatchRequests> findByReceiverIdAndStatusIn(Long receiverId, List<MatchStatus> status);
 
+    List<MatchRequests> findBySenderIdAndReceiverIdAndStatusIn(Long senderId, Long receiverId, List<MatchStatus> status);
+
     @Query("""
     SELECT m FROM MatchRequests m
     WHERE (m.sender.id = :userId OR m.receiver.id = :userId)

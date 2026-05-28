@@ -18,7 +18,6 @@ public class UserPreferencesDtoMapper {
         return UserPreferencesResponseDto.builder()
                 .userId(userPreferences.getUserId())
                 .isCompleted(userPreferences.getIsCompleted())
-                .isLocked(false)
                 .smokingStatus(userPreferences.getSmokingStatus())
                 .introduce(userPreferences.getIntroduce())
                 .answers(userPreferences.getAnswers())

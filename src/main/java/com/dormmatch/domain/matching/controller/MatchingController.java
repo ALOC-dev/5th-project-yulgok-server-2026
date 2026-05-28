@@ -2,15 +2,12 @@ package com.dormmatch.domain.matching.controller;
 
 import com.dormmatch.domain.matching.dto.MatchingRequestDto;
 import com.dormmatch.domain.matching.dto.MatchingResponseDto;
-import com.dormmatch.domain.matching.entity.MatchRequests;
-import com.dormmatch.domain.matching.repository.MatchRepository;
 import com.dormmatch.domain.matching.service.MatchingService;
-import com.dormmatch.global.aop.RequiresAuth;
-import com.dormmatch.global.aop.RequiresCertification;
-import com.dormmatch.global.aop.RequiresSurvey;
+import com.dormmatch.global.exception.ErrorCode;
 import com.dormmatch.global.response.GlobalApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,32 +35,37 @@ public class MatchingController {
             @ApiResponse(responseCode = "403", description = "Certification not completed"),
             @ApiResponse(responseCode = "404", description = "Matching status not found")
     })
-    @RequiresAuth   @RequiresCertification  @RequiresSurvey
+//    @RequiresAuth   @RequiresCertification  @RequiresSurvey
     @GetMapping("/api/matching/status/")
     public ResponseEntity<GlobalApiResponse<?>> getMatchingStatus(
             @AuthenticationPrincipal Long userId
     ){
         List<MatchingResponseDto> responseDtos = matchingService.getMatchingStatus(userId);
 
-        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"매칭 카드 조회 성공",responseDtos));
+        return ResponseEntity.ok(GlobalApiResponse.multiSuccess(HttpStatus.OK,"매칭 카드 조회 성공",responseDtos, responseDtos.size()));
     }
 
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Matching request updated successfully"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Survey not completed"),
-            @ApiResponse(responseCode = "409", description = "Matching request already exists")
+            @ApiResponse(responseCode = "404", description = "Matching request not found"),
     })
-    @RequiresAuth   @RequiresCertification  @RequiresSurvey
+//    @RequiresAuth   @RequiresCertification  @RequiresSurvey
     @PatchMapping("/api/matching/requests")
     public ResponseEntity<GlobalApiResponse<?>> sendHeartToReceiver(
             @AuthenticationPrincipal Long userId,
-            @RequestBody MatchingRequestDto requestDto
+            @Valid @RequestBody MatchingRequestDto requestDto
     ){
 
         if(requestDto.getMatchStatus().equals("REJECT")){
             matchingService.rejectHeart(userId, requestDto.getReceiverId());
             return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"하트 거절 성공",null));
+        }
+
+        if(!requestDto.getMatchStatus().equals("HEART")){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(GlobalApiResponse.error(HttpStatus.BAD_REQUEST, "매칭 상태는 HEART 또는 REJECT만 가능합니다.",null));
         }
 
         String success = matchingService.sendHeartToReceiver(userId, requestDto.getReceiverId());

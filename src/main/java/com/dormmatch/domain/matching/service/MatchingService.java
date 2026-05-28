@@ -4,7 +4,6 @@ import com.dormmatch.domain.matching.dto.MatchingResponseDto;
 import com.dormmatch.domain.matching.entity.MatchRequests;
 import com.dormmatch.domain.matching.entity.MatchStatus;
 import com.dormmatch.domain.matching.repository.MatchRepository;
-import com.dormmatch.domain.matching.util.MatchingDtoMapper;
 import com.dormmatch.domain.survey.entity.UserPreferences;
 import com.dormmatch.domain.user.entity.UserDetails;
 import com.dormmatch.domain.user.entity.Users;
@@ -22,7 +21,7 @@ import java.util.List;
 @Service
 public class MatchingService {
 
-    private MatchRepository matchRepository;
+    private final MatchRepository matchRepository;
 
     @Autowired
     public MatchingService(MatchRepository matchRepository){
@@ -37,8 +36,30 @@ public class MatchingService {
         MatchRequests completedMatchRequests = matchRepository.findByUserIdAndStatus(userId, MatchStatus.CONFIRMED)
                 .isPresent() ? matchRepository.findByUserIdAndStatus(userId, MatchStatus.CONFIRMED).get() : null;
 
-        if(completedMatchRequests != null)
-            return List.of(MatchingDtoMapper.toResponseDto(completedMatchRequests));
+        if (completedMatchRequests != null) {
+            boolean isSender = completedMatchRequests.getSender().getId().equals(userId);
+
+            Users matchedUser = isSender
+                    ? completedMatchRequests.getReceiver()
+                    : completedMatchRequests.getSender();
+
+            UserPreferences matchedPreferences = isSender
+                    ? completedMatchRequests.getReceiverPreferences()
+                    : completedMatchRequests.getSenderPreferences();
+
+            UserDetails userDetails = matchedUser.getUserDetails();
+
+            return List.of(MatchingResponseDto.builder()
+                    .userId(matchedUser.getId().toString())
+                    .name(matchedUser.getNickname())
+                    .gender(userDetails.getGender())
+                    .age(userDetails.getAge())
+                    .introduce(matchedPreferences.getIntroduce())
+                    .department(userDetails.getDepartment())
+                    .matchPercentage(completedMatchRequests.getMatchPercentage())
+                    .matchStatus(completedMatchRequests.getStatus())
+                    .build());
+        }
 
         List<MatchingResponseDto> matchingResponseDtos = new ArrayList<MatchingResponseDto>();
 
@@ -56,7 +77,6 @@ public class MatchingService {
                         .age(userDetails.getAge())
                         .introduce(matchRequests.getSenderPreferences().getIntroduce())
                         .department(userDetails.getDepartment())
-                        .studentId(userDetails.getStudentId())
                         .matchPercentage(matchRequests.getMatchPercentage())
                         .matchStatus(matchRequests.getStatus())
                         .build();
@@ -79,7 +99,6 @@ public class MatchingService {
                         .age(userDetails.getAge())
                         .introduce(matchRequests.getReceiverPreferences().getIntroduce())
                         .department(userDetails.getDepartment())
-                        .studentId(userDetails.getStudentId())
                         .matchPercentage(matchRequests.getMatchPercentage())
                         .matchStatus(matchRequests.getStatus())
                         .build();
@@ -102,7 +121,6 @@ public class MatchingService {
                         .age(userDetails.getAge())
                         .introduce(matchRequests.getReceiverPreferences().getIntroduce())
                         .department(userDetails.getDepartment())
-                        .studentId(userDetails.getStudentId())
                         .matchPercentage(matchRequests.getMatchPercentage())
                         .matchStatus(matchRequests.getStatus())
                         .build();
@@ -116,16 +134,20 @@ public class MatchingService {
 
         if(!partialConfirmedMatchRequests.isEmpty()) {
             for (MatchRequests matchRequests : partialConfirmedMatchRequests) {
-                Users user = matchRequests.getReceiver().getId().equals(userId) ? matchRequests.getSender() : matchRequests.getReceiver();
+
+                boolean isSender = matchRequests.getSender().getId().equals(userId);
+
+                Users user = isSender ? matchRequests.getReceiver() : matchRequests.getSender();
+                UserPreferences userPreferences = isSender ? matchRequests.getReceiverPreferences() : matchRequests.getSenderPreferences();
                 UserDetails userDetails = user.getUserDetails();
+
                 MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
                         .userId(user.getId().toString())
                         .name(user.getNickname())
                         .gender(userDetails.getGender())
                         .age(userDetails.getAge())
-                        .introduce(matchRequests.getReceiverPreferences().getIntroduce())
+                        .introduce(userPreferences.getIntroduce())
                         .department(userDetails.getDepartment())
-                        .studentId(userDetails.getStudentId())
                         .matchPercentage(matchRequests.getMatchPercentage())
                         .matchStatus(matchRequests.getStatus())
                         .build();
@@ -144,7 +166,7 @@ public class MatchingService {
     @Transactional
     public String sendHeartToReceiver(Long userId, Long receiverId){
 
-        List<MatchRequests> matchRequests = matchRepository.findByConditions(userId, receiverId, List.of(MatchStatus.RECOMMENDED));
+        List<MatchRequests> matchRequests = matchRepository.findBySenderIdAndReceiverIdAndStatusIn(userId, receiverId, List.of(MatchStatus.RECOMMENDED));
 
         if(!matchRequests.isEmpty()) {
             log.info("Heart sent successfully for user {} and receiver {}", userId, receiverId);
@@ -152,7 +174,7 @@ public class MatchingService {
             return "SENT";
         }
 
-        List<MatchRequests> matchRequests2 = matchRepository.findByConditions(receiverId, userId, List.of(MatchStatus.SENT));
+        List<MatchRequests> matchRequests2 = matchRepository.findBySenderIdAndReceiverIdAndStatusIn(receiverId, userId, List.of(MatchStatus.SENT));
 
         if(matchRequests2.isEmpty()) {
             log.warn("No matching request found for user {} and receiver {}", userId, receiverId);
@@ -173,7 +195,7 @@ public class MatchingService {
 
     @Transactional
     public void rejectHeart(Long userId, Long receiverId){
-        List<MatchRequests> matchRequests = matchRepository.findByConditions(userId, receiverId, List.of(MatchStatus.SENT));
+        List<MatchRequests> matchRequests = matchRepository.findBySenderIdAndReceiverIdAndStatusIn(userId, receiverId, List.of(MatchStatus.RECOMMENDED));
 
         if(!matchRequests.isEmpty()) {
             matchRequests.forEach(matchRequests1 -> matchRequests1.updateStatus(MatchStatus.REJECTED));
@@ -181,11 +203,12 @@ public class MatchingService {
             return;
         }
 
-        List<MatchRequests> matchRequests2 = matchRepository.findByConditions(receiverId, userId, List.of(MatchStatus.RECOMMENDED));
+        List<MatchRequests> matchRequests2 = matchRepository.findBySenderIdAndReceiverIdAndStatusIn(receiverId, userId, List.of(MatchStatus.SENT));
 
         if(!matchRequests2.isEmpty()) {
             log.info("Heart rejection successful for user {} and receiver {}", userId, receiverId);
             matchRequests2.forEach(matchRequests1 -> matchRequests1.updateStatus(MatchStatus.REJECTED));
+            return;
         }
 
         log.warn("No matching request found for user {} and receiver {}", userId, receiverId);

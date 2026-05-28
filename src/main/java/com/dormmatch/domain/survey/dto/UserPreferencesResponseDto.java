@@ -15,7 +15,6 @@ public class UserPreferencesResponseDto {
 
     private Long userId;
     private Boolean isCompleted;
-    private Boolean isLocked;
     private Integer smokingStatus;
     private String introduce;
     private SurveyAnswers answers;
