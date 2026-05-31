@@ -29,7 +29,7 @@ public class AuthService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Transactional
-    public LoginResponseDto loginOrRegister(String code) {
+    public LoginResult loginOrRegister(String code){
         // 카카오 인가 코드를 카카오 액세스 토큰으로 교환한다.
         KakaoTokenResponseDto tokenResponse = getKakaoToken(code);
 
@@ -41,17 +41,23 @@ public class AuthService {
         // 카카오 사용자를 로컬 사용자와 연결한 뒤 서비스용 JWT를 발급한다.
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getRole());
-
-        return LoginResponseDto.builder()
+        //refresh토큰 access토큰 분리해 전달
+        LoginResponseDto response = LoginResponseDto.builder()
                 .userId(user.getId())
                 .tokenType("Bearer")
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .accessTokenExpiresIn(jwtTokenProvider.getAccessTokenExpiration())
-                .refreshTokenExpiresIn(jwtTokenProvider.getRefreshTokenExpiration())
                 .build();
-    }
 
+        return new LoginResult(response, refreshToken);
+    }
+    //controller에게 넘겨주는 결과상자
+    public record LoginResult(
+            LoginResponseDto response,
+            String refreshToken
+    ) {
+    }
+    // authid로 기존 회원찾기+ 없으면 새회원 저장
     private Users findOrCreateUser(KakaoUserInfoResponseDto userInfo) {
         String oauthId = userInfo.getId().toString();
 

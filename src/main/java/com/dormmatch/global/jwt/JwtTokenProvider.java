@@ -22,18 +22,18 @@ public class JwtTokenProvider {
 
     @PostConstruct
     void init() {
-        // jjwt에서 HMAC 키를 만들 수 있도록 secret 값은 Base64 인코딩 문자열이어야 한다.
+        // 서버 시작후jwt.scret값을 읽어서 비밀키 객체 만들어줌
         this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecret()));
     }
-
+    //user id랑 role을 넣어서 access토큰 생성
     public String createAccessToken(Long userId, String role) {
         return createToken(userId, role, jwtProperties.getAccessTokenExpiration());
     }
-
+    //refresh토큰 생성
     public String createRefreshToken(Long userId, String role) {
         return createToken(userId, role, jwtProperties.getRefreshTokenExpiration());
     }
-
+    //토큰 검증
     public boolean validateToken(String token) {
         try {
             // 파싱 과정에서 서명과 만료 시간이 함께 검증된다.
@@ -43,7 +43,7 @@ public class JwtTokenProvider {
             return false;
         }
     }
-
+    //토큰 내용 꺼내기
     public Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
@@ -59,7 +59,7 @@ public class JwtTokenProvider {
     public Long getRefreshTokenExpiration() {
         return jwtProperties.getRefreshTokenExpiration();
     }
-
+    //실제 토큰 만들어줌
     private String createToken(Long userId, String role, Long expirationMillis) {
         Date now = new Date();
         Date expiresAt = new Date(now.getTime() + expirationMillis);
@@ -73,4 +73,13 @@ public class JwtTokenProvider {
                 .signWith(secretKey)
                 .compact();
     }
+    /*
+    JWT payload
+    {
+    "sub": "1",
+    "role": "USER",
+    "iat": 1710000000,
+    "exp": 1710003600
+    }
+     */
 }
