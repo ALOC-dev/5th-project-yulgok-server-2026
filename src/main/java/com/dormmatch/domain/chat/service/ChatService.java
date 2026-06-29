@@ -31,17 +31,15 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
 
-    public ChatService(
-            ChatRoomRepository chatRoomRepository,
-            ChatMessageRepository chatMessageRepository
-    ) {
+    public ChatService(ChatRoomRepository chatRoomRepository, ChatMessageRepository chatMessageRepository) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatMessageRepository = chatMessageRepository;
     }
 
+    //채팅방 목록 조회
     @Transactional(readOnly = true)
     public ChatRoomsResponseDto getChatRooms(Long userId) {
-        // 매칭/유저 도메인 연결 전까지는 전체 채팅방을 조회한다.
+        // 매칭/유저 도메인 연결 전까지는 전체 채팅방을 조회한다. (나중에 유저가 참여한 채팅방만 조회하는 걸로 수정해야함)
         List<ChatRoomResponseDto> rooms = chatRoomRepository.findAll()
                 .stream()
                 .map(room -> {
@@ -55,7 +53,8 @@ public class ChatService {
                     int unreadCount = chatMessageRepository
                             .countByRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId);
 
-                    // 유저 도메인 연결 후 실제 상대방 이름/프로필 이미지로 교체할 예정
+                    // 유저 도메인 연결 후 실제 상대방 이름/프로필 이미지로 교체할 예정, 지금은 임시값 넣어둠.
+                    // TODO: Users 도메인 연결 후 실제 상대방 정보로 교체
                     return new ChatRoomResponseDto(
                             room.getId(),
                             "상대방",
@@ -70,8 +69,10 @@ public class ChatService {
         return new ChatRoomsResponseDto(rooms);
     }
 
+    //채팅방 내 과거 메시지 조회
     @Transactional(readOnly = true)
     public ChatMessagesResponseDto getMessages(Long roomId, Long cursor, int size) {
+        //채팅방이 실제 존재하는 지 확인, 아니면 CHAT_ROOM_NOT_FOUND 예외 던짐.
         validateRoomExists(roomId);
 
         // size + 1개를 조회해서 다음 페이지 존재 여부를 판단한다.
@@ -104,6 +105,7 @@ public class ChatService {
         return new ChatReadResponseDto(true);
     }
 
+    // 나중에 내가 참여한 방 기준으로 수정해야함.
     @Transactional(readOnly = true)
     public ChatUnreadCountResponseDto getTotalUnreadCount(Long userId) {
         int totalUnreadCount = chatMessageRepository.countBySenderIdNotAndIsReadFalse(userId);

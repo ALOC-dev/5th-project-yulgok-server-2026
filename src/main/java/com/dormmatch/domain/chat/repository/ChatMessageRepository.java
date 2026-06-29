@@ -14,11 +14,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     List<ChatMessage> findByRoomIdOrderByIdDesc(Long roomId, Pageable pageable);
 
     // 커서 기반 페이지네이션용 (ex. 처음 메시지 30개 가져왔고, 마지막 메시지id가 150이면 id<150인 메시지 30개 가져옴)
-    List<ChatMessage> findByRoomIdAndIdLessThanOrderByIdDesc(
-            Long roomId,
-            Long cursor,
-            Pageable pageable
-    );
+    List<ChatMessage> findByRoomIdAndIdLessThanOrderByIdDesc(Long roomId, Long cursor, Pageable pageable);
 
     //채팅방 목록 내 마지막 메시지 보여주기 위함.
     Optional<ChatMessage> findTopByRoomIdOrderByCreatedAtDesc(Long roomId);
@@ -30,6 +26,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     // 전체 채팅방에서 내가 안 읽은 총 메시지 개수 조회(테스트 용, 추후 연결할 때 수정 필요함)
     int countBySenderIdNotAndIsReadFalse(Long senderId);
 
-    // 읽음 처리용 메소드 
+    // 읽음 처리용 메소드
     List<ChatMessage> findByRoomIdAndSenderIdNotAndIsReadFalse(Long roomId, Long senderId);
 }
