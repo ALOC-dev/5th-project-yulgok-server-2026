@@ -1,54 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>웹소켓 메아리 테스트</title>
-    <!-- STOMP 라이브러리 가져오기 -->
+    <title>Chat WebSocket Test</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 720px;
+            margin: 40px auto;
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: 700;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            margin-top: 4px;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-top: 16px;
+            font-weight: 700;
+        }
+
+        #messages {
+            padding-left: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h2>STOMP 메아리 테스트</h2>
-    <button onclick="connect()">1. 서버 연결하기 (Connect)</button>
-    <br><br>
-    <input type="text" id="messageInput" placeholder="보낼 메시지 입력">
-    <button onclick="sendMessage()">2. 메시지 보내기 (PUB)</button>
-    
-    <h3>받은 메시지 (SUB)</h3>
-    <ul id="messages"></ul>
+<h2>Chat WebSocket Test</h2>
 
-    <script>
-        let stompClient = null;
+<label for="roomId">Room ID</label>
+<input id="roomId" type="number" value="1">
 
-        function connect() {
-            // 🌟 1. 백엔드와 똑같이 주소를 맞춰주고 SockJS 번역기 사용
-            let socket = new SockJS('http://localhost:8080/ws-stomp');
-            stompClient = Stomp.over(socket);
+<label for="senderId">Sender ID</label>
+<input id="senderId" type="number" value="1">
 
-            // 🌟 2. 연결 시도! (에러가 나면 왜 났는지 콘솔에 띄우도록 수정함)
-            stompClient.connect({}, function (frame) {
-                console.log('연결 성공: ' + frame);
-                alert("연결 성공!!!"); // 드디어 이 창을 보게 될 거야!
+<label for="messageInput">Message</label>
+<input id="messageInput" type="text" placeholder="메시지를 입력하세요">
 
-                stompClient.subscribe('/topic/room/test', function (message) {
-                    let receivedData = JSON.parse(message.body);
-                    let li = document.createElement('li');
-                    li.textContent = receivedData.sender + " : " + receivedData.content;
-                    document.getElementById('messages').appendChild(li);
-                });
-            }, function(error) {
-                // 만약 실패하면 뭐가 문제인지 정확하게 콘솔에 찍힘
-                console.error("연결 에러 원인: ", error);
+<button onclick="connect()">Connect & Subscribe</button>
+<button onclick="sendMessage()">Send</button>
+<button onclick="disconnect()">Disconnect</button>
+
+<div id="status">Disconnected</div>
+
+<h3>Received Messages</h3>
+<ul id="messages"></ul>
+
+<script>
+    let stompClient = null;
+    let subscribedRoomId = null;
+
+    function connect() {
+        const roomId = document.getElementById("roomId").value;
+        const socket = new SockJS("http://localhost:8080/ws-stomp");
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            subscribedRoomId = roomId;
+            setStatus("Connected: " + frame);
+
+            stompClient.subscribe("/topic/chat/rooms/" + roomId, function (message) {
+                const receivedData = JSON.parse(message.body);
+                appendMessage(receivedData);
+            });
+        }, function (error) {
+            console.error("WebSocket connection error:", error);
+            setStatus("Connection failed");
+        });
+    }
+
+    function sendMessage() {
+        if (!stompClient || !stompClient.connected) {
+            alert("먼저 Connect를 눌러주세요.");
+            return;
+        }
+
+        const roomId = document.getElementById("roomId").value;
+        const senderId = Number(document.getElementById("senderId").value);
+        const message = document.getElementById("messageInput").value;
+
+        const payload = {
+            senderId: senderId,
+            message: message
+        };
+
+        stompClient.send(
+            "/app/chat/rooms/" + roomId + "/send",
+            {},
+            JSON.stringify(payload)
+        );
+
+        document.getElementById("messageInput").value = "";
+    }
+
+    function disconnect() {
+        if (stompClient) {
+            stompClient.disconnect(function () {
+                setStatus("Disconnected");
             });
         }
+    }
 
-        function sendMessage() {
-            let content = document.getElementById('messageInput').value;
-            let chatMessage = { sender: "백엔드리드", content: content };
-            
-            // 3. 백엔드 컨트롤러(/app/chat.send)로 메시지 쏘기!
-            stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
-        }
-    </script>
+    function appendMessage(data) {
+        const li = document.createElement("li");
+        li.textContent =
+            "messageId=" + data.messageId +
+            ", senderId=" + data.senderId +
+            ", message=" + data.message +
+            ", createdAt=" + data.createdAt +
+            ", isRead=" + data.isRead;
+        document.getElementById("messages").appendChild(li);
+    }
+
+    function setStatus(text) {
+        document.getElementById("status").textContent = text;
+    }
+</script>
 </body>
 </html>

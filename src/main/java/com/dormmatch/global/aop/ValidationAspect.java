@@ -1,6 +1,5 @@
 package com.dormmatch.global.aop;
 
-import com.dormmatch.domain.survey.entity.UserPreferences;
 import com.dormmatch.domain.survey.repository.UserPreferencesRepository;
 import com.dormmatch.domain.user.entity.Users;
 import com.dormmatch.domain.user.repository.UsersRepository;
@@ -11,6 +10,7 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -26,78 +26,70 @@ public class ValidationAspect {
     private final UsersRepository usersRepository;
 
     @Autowired
-    public ValidationAspect(UserPreferencesRepository userPreferencesRepository,
-                            UsersRepository usersRepository){
+    public ValidationAspect(
+            UserPreferencesRepository userPreferencesRepository,
+            UsersRepository usersRepository
+    ) {
         this.userPreferencesRepository = userPreferencesRepository;
         this.usersRepository = usersRepository;
     }
 
-    // survey가 완료된 상태인지 검증
-    // @RequiresSurvey를 메서드 앞에 붙여서 사용
     @Before("@annotation(com.dormmatch.global.aop.RequiresSurvey)")
-    public void checkSurveyCompleted(JoinPoint joinPoint){
+    public void checkSurveyCompleted(JoinPoint joinPoint) {
         Long userId = extractUserId(joinPoint);
 
         Boolean surveyCompleted = userPreferencesRepository
                 .findByUserId(userId)
-                .orElseThrow(()->new BusinessException(ErrorCode.SURVEY_NOT_FOUND))
+                .orElseThrow(() -> new BusinessException(ErrorCode.SURVEY_NOT_FOUND))
                 .getIsCompleted();
 
-        if(surveyCompleted == false)
-            throw new BusinessException(ErrorCode.SURVEY_NOT_FOUND);
+        if (Boolean.FALSE.equals(surveyCompleted)) {
+            throw new BusinessException(ErrorCode.SURVEY_REQUIRED);
+        }
     }
 
-
-    // 로그인 여부를 확인하는 메서드
-    // @RequiresAuth를 메서드 앞에 붙여 사용
     @Before("@annotation(requiresAuth)")
-    public void checkAuth(JoinPoint joinPoint, RequiresAuth requiresAuth){
-
+    public void checkAuth(JoinPoint joinPoint, RequiresAuth requiresAuth) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken
+                || !(authentication.getPrincipal() instanceof Long userId)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
-        Long userId = (Long) authentication.getPrincipal();
-
-        log.debug("[AuthAspect] userId: {}, method: {}",
-                userId, joinPoint.getSignature().getName());
+        log.debug("[AuthAspect] userId: {}, method: {}", userId, joinPoint.getSignature().getName());
 
         Users user = usersRepository.findById(userId)
-                .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        AuthRole[] authRole = requiresAuth.roles();
-        if (authRole.length == 0) return;
+        AuthRole[] authRoles = requiresAuth.roles();
+        if (authRoles.length == 0) {
+            return;
+        }
 
-        boolean hasRole = Arrays.stream(authRole)
+        boolean hasRole = Arrays.stream(authRoles)
                 .anyMatch(role -> role.name().equals(user.getRole()));
 
         if (!hasRole) {
-            log.warn("[AuthAspect] 권한 없음 - userId: {}, role: {}, required: {}",
-                    userId, user.getRole(), Arrays.toString(authRole));
+            log.warn("[AuthAspect] forbidden - userId: {}, role: {}, required: {}",
+                    userId, user.getRole(), Arrays.toString(authRoles));
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
-
     }
 
-
-    // 인증서 인증
-    // @RequiresCertification
     @Before("@annotation(com.dormmatch.global.aop.RequiresCertification)")
-    public void checkCertification(JoinPoint joinPoint){
-        Long userId = extractUserId(joinPoint);
-
-
+    public void checkCertification(JoinPoint joinPoint) {
+        extractUserId(joinPoint);
     }
 
-    // 매개변수로 들어오는 userId 확인
-    public static Long extractUserId(JoinPoint joinPoint){
-        for(Object args : joinPoint.getArgs()) {
-            if (args instanceof Long) {
-                return (Long) args;
+    public static Long extractUserId(JoinPoint joinPoint) {
+        for (Object arg : joinPoint.getArgs()) {
+            if (arg instanceof Long userId) {
+                return userId;
             }
         }
-        throw new IllegalStateException("userId를 찾을 수 없습니다.");
+        throw new BusinessException(ErrorCode.UNAUTHORIZED);
     }
 }

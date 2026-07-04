@@ -1,24 +1,34 @@
 package com.dormmatch.global.config;
 
+import com.dormmatch.global.jwt.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // CSRF 차단 해제 (API 서버니까)
-                .formLogin(form -> form.disable()) // 🌟 중요: 스프링 기본 로그인 폼 화면 꺼버리기!
-                .httpBasic(basic -> basic.disable()) // 기본 HTTP 로그인창 꺼버리기
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // 임시로 모두 허용 후 나중에 JWT 필터 연결
-                );
+                        // 세부 인증 여부는 @RequiresAuth AOP에서 검사한다.
+                        .anyRequest().permitAll()
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

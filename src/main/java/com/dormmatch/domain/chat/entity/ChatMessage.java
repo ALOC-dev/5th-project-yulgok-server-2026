@@ -32,6 +32,17 @@ public class ChatMessage {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    private ChatMessage(Long roomId, Long senderId, String message) {
+        this.roomId = roomId;
+        this.senderId = senderId;
+        this.message = message;
+        this.isRead = false;
+    }
+
+    public static ChatMessage create(Long roomId, Long senderId, String message) {
+        return new ChatMessage(roomId, senderId, message);
+    }
+
     @PrePersist
     protected void onCreate()
     {

@@ -5,12 +5,15 @@ import com.dormmatch.domain.chat.dto.ChatReadResponseDto;
 import com.dormmatch.domain.chat.dto.ChatRoomsResponseDto;
 import com.dormmatch.domain.chat.dto.ChatUnreadCountResponseDto;
 import com.dormmatch.domain.chat.service.ChatService;
-import com.dormmatch.global.aop.RequiresAuth;
 import com.dormmatch.global.response.GlobalApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/chat")
@@ -22,11 +25,10 @@ public class ChatController {
         this.chatService = chatService;
     }
 
-    // 채팅방 목록 조회
     @GetMapping("/rooms")
-    @RequiresAuth
     public ResponseEntity<GlobalApiResponse<ChatRoomsResponseDto>> getChatRooms(
-            @AuthenticationPrincipal Long userId
+            // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
+            @RequestParam(defaultValue = "1") Long userId
     ) {
         ChatRoomsResponseDto responseDto = chatService.getChatRooms(userId);
 
@@ -35,11 +37,8 @@ public class ChatController {
         );
     }
 
-    // 채팅방 내 과거 메시지 조회
     @GetMapping("/rooms/{roomId}/messages")
-    @RequiresAuth
     public ResponseEntity<GlobalApiResponse<ChatMessagesResponseDto>> getMessages(
-            @AuthenticationPrincipal Long userId,
             @PathVariable Long roomId,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "30") int size
@@ -52,12 +51,11 @@ public class ChatController {
         );
     }
 
-    // 메시지 읽음 처리
     @PatchMapping("/rooms/{roomId}/read")
-    @RequiresAuth
     public ResponseEntity<GlobalApiResponse<ChatReadResponseDto>> markMessagesAsRead(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long roomId
+            @PathVariable Long roomId,
+            // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
+            @RequestParam(defaultValue = "1") Long userId
     ) {
         ChatReadResponseDto responseDto = chatService.markMessagesAsRead(roomId, userId);
 
@@ -66,11 +64,10 @@ public class ChatController {
         );
     }
 
-    // 안 읽은 메시지 전체 개수 조회
     @GetMapping("/unread-count")
-    @RequiresAuth
     public ResponseEntity<GlobalApiResponse<ChatUnreadCountResponseDto>> getTotalUnreadCount(
-            @AuthenticationPrincipal Long userId
+            // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
+            @RequestParam(defaultValue = "1") Long userId
     ) {
         ChatUnreadCountResponseDto responseDto = chatService.getTotalUnreadCount(userId);
 
