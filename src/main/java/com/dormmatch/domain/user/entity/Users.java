@@ -61,4 +61,13 @@ public class Users {
     public void activate()  { this.status = "ACTIVE"; }
     public void ban()       { this.status = "BANNED"; }
     public void promoteToUser() { this.role = "USER"; }
+
+    public void updateProfile(String nickname, String profileImageUrl) {
+        if (nickname != null) {
+            this.nickname = nickname;
+        }
+        if (profileImageUrl != null) {
+            this.profileImageUrl = profileImageUrl;
+        }
+    }
 }

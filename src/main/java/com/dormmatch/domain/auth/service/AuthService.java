@@ -1,22 +1,34 @@
 package com.dormmatch.domain.auth.service;
 
+import com.dormmatch.domain.auth.dto.AuthStatusResponseDto;
 import com.dormmatch.domain.auth.dto.KakaoTokenResponseDto;
 import com.dormmatch.domain.auth.dto.KakaoUserInfoResponseDto;
 import com.dormmatch.domain.auth.dto.LoginResponseDto;
+import com.dormmatch.domain.auth.dto.RefreshTokenResponseDto;
+import com.dormmatch.domain.survey.repository.UserPreferencesRepository;
 import com.dormmatch.domain.user.entity.Users;
 import com.dormmatch.domain.user.repository.UsersRepository;
 import com.dormmatch.global.config.KakaoProperties;
+import com.dormmatch.global.exception.BusinessException;
+import com.dormmatch.global.exception.ErrorCode;
 import com.dormmatch.global.jwt.JwtTokenProvider;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,54 +37,130 @@ public class AuthService {
 
     private final KakaoProperties kakaoProperties;
     private final UsersRepository usersRepository;
+    private final UserPreferencesRepository userPreferencesRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Transactional
-    public LoginResult loginOrRegister(String code){
-        // 카카오 인가 코드를 카카오 액세스 토큰으로 교환한다.
+    public LoginResult loginOrRegister(String code) {
         KakaoTokenResponseDto tokenResponse = getKakaoToken(code);
-
-        // 카카오 액세스 토큰으로 카카오 사용자 정보를 조회한다.
         KakaoUserInfoResponseDto userInfo = getKakaoUserInfo(tokenResponse.getAccessToken());
 
-        Users user = findOrCreateUser(userInfo);
+        UserRegistration userRegistration = findOrCreateUser(userInfo);
+        Users user = userRegistration.user();
 
-        // 카카오 사용자를 로컬 사용자와 연결한 뒤 서비스용 JWT를 발급한다.
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getRole());
-        //refresh토큰 access토큰 분리해 전달
+
         LoginResponseDto response = LoginResponseDto.builder()
-                .userId(user.getId())
-                .tokenType("Bearer")
                 .accessToken(accessToken)
-                .accessTokenExpiresIn(jwtTokenProvider.getAccessTokenExpiration())
+                .refreshToken(refreshToken)
+                .isNewUser(userRegistration.isNewUser())
+                .user(LoginResponseDto.UserInfo.builder()
+                        .id(user.getId())
+                        .nickname(user.getNickname())
+                        .role(user.getRole())
+                        .status(user.getStatus())
+                        .build())
                 .build();
 
         return new LoginResult(response, refreshToken);
     }
-    //controller에게 넘겨주는 결과상자
+
+    public RefreshTokenResponseDto refreshAccessToken(String refreshToken) {
+        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+            return null;
+        }
+
+        Claims claims = jwtTokenProvider.parseClaims(refreshToken);
+        Long userId = Long.valueOf(claims.getSubject());
+
+        Users user = usersRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return null;
+        }
+
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getRole());
+
+        return RefreshTokenResponseDto.builder()
+                .accessToken(accessToken)
+                .build();
+    }
+
+    public AuthStatusResponseDto getCurrentUserStatus() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getPrincipal() == null
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return AuthStatusResponseDto.builder()
+                    .authenticated(false)
+                    .build();
+        }
+
+        Long userId;
+        try {
+            userId = Long.valueOf(authentication.getPrincipal().toString());
+        } catch (NumberFormatException e) {
+            return AuthStatusResponseDto.builder()
+                    .authenticated(false)
+                    .build();
+        }
+
+        Users user = usersRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return AuthStatusResponseDto.builder()
+                    .authenticated(false)
+                    .build();
+        }
+
+        return AuthStatusResponseDto.builder()
+                .authenticated(true)
+                .user(AuthStatusResponseDto.UserInfo.builder()
+                        .id(user.getId())
+                        .nickname(user.getNickname())
+                        .role(user.getRole())
+                        .status(user.getStatus())
+                        .certificationStatus(null)
+                        .surveyCompleted(isSurveyCompleted(user.getId()))
+                        .build())
+                .build();
+    }
+
+    private boolean isSurveyCompleted(Long userId) {
+        return userPreferencesRepository.findByUserId(userId)
+                .map(userPreferences -> Boolean.TRUE.equals(userPreferences.getIsCompleted()))
+                .orElse(false);
+    }
+
     public record LoginResult(
             LoginResponseDto response,
             String refreshToken
     ) {
     }
-    // authid로 기존 회원찾기+ 없으면 새회원 저장
-    private Users findOrCreateUser(KakaoUserInfoResponseDto userInfo) {
+
+    private record UserRegistration(
+            Users user,
+            boolean isNewUser
+    ) {
+    }
+
+    private UserRegistration findOrCreateUser(KakaoUserInfoResponseDto userInfo) {
         String oauthId = userInfo.getId().toString();
 
-        // oauthId는 카카오의 고유 사용자 ID이며 로그인 식별자로 사용한다.
-        return usersRepository.findByOauthId(oauthId)
-                .orElseGet(() -> {
-                    KakaoUserInfoResponseDto.KakaoAccount.Profile profile = userInfo.getKakaoAccount().getProfile();
-                    Users newUser = Users.builder()
-                            .oauthId(oauthId)
-                            .email(userInfo.getKakaoAccount().getEmail())
-                            .nickname(profile.getNickname())
-                            .profileImageUrl(profile.getProfileImageUrl())
-                            .build();
-                    return usersRepository.save(newUser);
-                });
+        Optional<Users> existingUser = usersRepository.findByOauthId(oauthId);
+        if (existingUser.isPresent()) {
+            return new UserRegistration(existingUser.get(), false);
+        }
+
+        KakaoUserInfoResponseDto.KakaoAccount.Profile profile = userInfo.getKakaoAccount().getProfile();
+        Users newUser = Users.builder()
+                .oauthId(oauthId)
+                .email(userInfo.getKakaoAccount().getEmail())
+                .nickname(profile.getNickname())
+                .profileImageUrl(profile.getProfileImageUrl())
+                .build();
+        return new UserRegistration(usersRepository.save(newUser), true);
     }
 
     private KakaoTokenResponseDto getKakaoToken(String code) {
@@ -90,7 +178,17 @@ public class AuthService {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
-        return restTemplate.postForObject(tokenUri, request, KakaoTokenResponseDto.class);
+        try {
+            KakaoTokenResponseDto response = restTemplate.postForObject(tokenUri, request, KakaoTokenResponseDto.class);
+            if (response == null || response.getAccessToken() == null) {
+                throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
+            }
+            return response;
+        } catch (HttpClientErrorException.BadRequest e) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        } catch (RestClientException e) {
+            throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
+        }
     }
 
     private KakaoUserInfoResponseDto getKakaoUserInfo(String accessToken) {
@@ -101,6 +199,15 @@ public class AuthService {
 
         HttpEntity<?> request = new HttpEntity<>(headers);
 
-        return restTemplate.exchange(userInfoUri, HttpMethod.GET, request, KakaoUserInfoResponseDto.class).getBody();
+        try {
+            KakaoUserInfoResponseDto response = restTemplate.exchange(userInfoUri, HttpMethod.GET, request, KakaoUserInfoResponseDto.class).getBody();
+            if (response == null || response.getId() == null || response.getKakaoAccount() == null
+                    || response.getKakaoAccount().getProfile() == null) {
+                throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
+            }
+            return response;
+        } catch (RestClientException e) {
+            throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
+        }
     }
 }

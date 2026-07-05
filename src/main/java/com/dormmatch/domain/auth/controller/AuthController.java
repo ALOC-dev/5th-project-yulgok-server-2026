@@ -1,13 +1,22 @@
 package com.dormmatch.domain.auth.controller;
 
+import com.dormmatch.domain.auth.dto.AuthStatusResponseDto;
 import com.dormmatch.domain.auth.dto.LoginResponseDto;
+import com.dormmatch.domain.auth.dto.RefreshTokenResponseDto;
 import com.dormmatch.domain.auth.service.AuthService;
 import com.dormmatch.global.response.ApiResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 
@@ -18,47 +27,84 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @GetMapping("/kakao/callback")
-    public ResponseEntity<ApiResponse<LoginResponseDto>> kakaoCallback(
-            @RequestParam("code") String code,
-            HttpServletResponse servletResponse
-    ) {
-        // AuthService에서 accessToken 응답 DTO와 refreshToken을 같이 받는다.
-        AuthService.LoginResult loginResult = authService.loginOrRegister(code);
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<AuthStatusResponseDto>> status() {
+        AuthStatusResponseDto response = authService.getCurrentUserStatus();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
-        // refreshToken을 HttpOnly 쿠키로 만든다.
-        ResponseCookie refreshTokenCookie = ResponseCookie.from(
-                        "refreshToken",
-                        loginResult.refreshToken()
-                )
-                // JavaScript에서 document.cookie로 읽을 수 없게 막는다.
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
+        ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-
-                // 로컬 개발환경은 보통 http라서 false.
-                // 배포환경 HTTPS에서는 true로 바꿔야 한다.
                 .secure(false)
-
-                // 모든 경로에서 쿠키가 전달되도록 설정한다.
                 .path("/")
-
-                // refreshToken 쿠키 만료 시간. 현재는 14일.
-                .maxAge(Duration.ofDays(14))
-
-                // 로컬 개발에서는 Lax가 테스트하기 편하다.
-                // 프론트/백엔드 도메인이 완전히 다르면 None + Secure(true)를 고려한다.
+                .maxAge(0)
                 .sameSite("Lax")
-
                 .build();
 
-        // 실제 응답 헤더에 Set-Cookie를 추가한다.
-        servletResponse.addHeader(
-                "Set-Cookie",
-                refreshTokenCookie.toString()
-        );
+        response.addHeader("Set-Cookie", clearCookie.toString());
+        return ResponseEntity.ok(ApiResponse.successMessage("로그아웃되었습니다."));
+    }
 
-        // JSON 응답에는 accessToken만 들어간다.
-        return ResponseEntity.ok(
-                ApiResponse.success(loginResult.response())
-        );
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<RefreshTokenResponseDto>> refresh(
+            @RequestParam(value = "refreshToken", required = false) String refreshToken,
+            HttpServletRequest request
+    ) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            refreshToken = extractRefreshToken(request);
+        }
+
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(HttpStatus.UNAUTHORIZED, "Refresh Token이 필요합니다."));
+        }
+
+        RefreshTokenResponseDto response = authService.refreshAccessToken(refreshToken);
+        if (response == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(HttpStatus.UNAUTHORIZED, "Refresh Token이 만료되었거나 유효하지 않습니다."));
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/kakao/callback")
+    public ResponseEntity<ApiResponse<LoginResponseDto>> kakaoCallback(
+            @RequestParam(value = "code", required = false) String code,
+            HttpServletResponse servletResponse
+    ) {
+        if (code == null || code.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "인가 코드가 필요합니다."));
+        }
+
+        AuthService.LoginResult loginResult = authService.loginOrRegister(code);
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResult.refreshToken())
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(Duration.ofDays(14))
+                .sameSite("Lax")
+                .build();
+
+        servletResponse.addHeader("Set-Cookie", refreshTokenCookie.toString());
+        return ResponseEntity.ok(ApiResponse.success(loginResult.response()));
+    }
+
+    private String extractRefreshToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+
+        for (Cookie cookie : cookies) {
+            if ("refreshToken".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
+        return null;
     }
 }

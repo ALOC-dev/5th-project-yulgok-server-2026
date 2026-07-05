@@ -23,7 +23,10 @@ public class JwtTokenProvider {
     @PostConstruct
     void init() {
         // 서버 시작후jwt.scret값을 읽어서 비밀키 객체 만들어줌
-        this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecret()));
+        //this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecret()));
+        this.secretKey = Keys.hmacShaKeyFor(
+                jwtProperties.getSecret().getBytes()
+        );
     }
     //user id랑 role을 넣어서 access토큰 생성
     public String createAccessToken(Long userId, String role) {
