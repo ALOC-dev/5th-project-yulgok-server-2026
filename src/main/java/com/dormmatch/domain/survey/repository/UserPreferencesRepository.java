@@ -1,84 +1,103 @@
 package com.dormmatch.domain.survey.repository;
 
-import com.dormmatch.domain.survey.entity.UserPreferences;
-import com.pgvector.PGvector;
-import org.apache.catalina.User;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.dormmatch.domain.survey.entity.UserPreferences;
+import com.pgvector.PGvector;
 
 @Repository
 public interface UserPreferencesRepository extends JpaRepository<UserPreferences, Long> {
+
+    interface RecommendationCandidate {
+        Long getUserId();
+        Double getMatchPercentage();
+    }
+
     Optional<UserPreferences> findByUserId(Long userId);
 
-    // 매칭 안 된 유저 전체 조회
-    List<UserPreferences> findByIsMatchedFalseAndIsCompletedTrue();
+    @Query("""
+        SELECT up
+        FROM UserPreferences up
+        JOIN FETCH up.user u
+        JOIN FETCH u.userDetails
+        WHERE up.userId = :userId
+    """)
+    Optional<UserPreferences> findByUserIdWithUserDetails(@Param("userId") Long userId);
+
 
     @Query(value = """
-    SELECT up.user_id
-    FROM user_preferences up
-    JOIN users u ON up.user_id = u.id
-    JOIN user_details ud ON up.user_id = ud.user_id
-    WHERE u.status = 'ACTIVE'
-      AND u.role = 'USER'
-      AND up.is_completed = true
-      AND up.is_matched = false
-      AND up.smoking_status = :smokingStatus
-      AND ud.gender = :gender
-      AND up.user_id != :myUserId
-      AND NOT EXISTS (
-          SELECT 1
-          FROM match_requests mr
-          WHERE (
-              (mr.sender_id = :myUserId AND mr.receiver_id = up.user_id)
-              OR
-              (mr.sender_id = up.user_id AND mr.receiver_id = :myUserId)
+        SELECT
+            up.user_id AS userId,
+            ROUND(
+                (GREATEST(0, 1 - ((up.lifestyle_vector <-> CAST(:vector AS vector)) / 3.0)) * 100)::numeric,
+                1
+            )::double precision AS matchPercentage
+        FROM user_preferences up
+        JOIN users u ON up.user_id = u.id
+        JOIN user_details ud ON up.user_id = ud.user_id
+        WHERE u.status = 'ACTIVE'
+          AND u.role = 'USER'
+          AND up.is_completed = true
+          AND up.is_matched = false
+          AND up.user_id != :myUserId
+          AND ud.gender = :gender
+          AND up.smoking_status = :smokingStatus
+          AND NOT EXISTS (
+              SELECT 1
+              FROM match_requests mr
+              WHERE mr.user_low_id = LEAST(:myUserId, up.user_id)
+                AND mr.user_high_id = GREATEST(:myUserId, up.user_id)
           )
-          AND mr.status IN ('RECOMMENDED', 'SENT', 'PARTIAL_CONFIRMED', 'CONFIRMED', 'REJECTED')
-      )
-    ORDER BY up.lifestyle_vector <-> :vector
-    LIMIT 3
+        ORDER BY up.lifestyle_vector <-> CAST(:vector AS vector)
+        LIMIT :limit
     """, nativeQuery = true)
-    List<Long> findTop3MatchedUserIds(
+    List<RecommendationCandidate> findNewRecommendationCandidates(
             @Param("myUserId") Long myUserId,
-            @Param("smokingStatus") Integer smokingStatus,
             @Param("gender") String gender,
-            @Param("vector") PGvector vector
+            @Param("smokingStatus") Integer smokingStatus,
+            @Param("vector") String vector,   // ← PGvector에서 String으로
+            @Param("limit") int limit
     );
 
+
     @Query(value = """
-    SELECT up.user_id
-    FROM user_preferences up
-    JOIN users u ON up.user_id = u.id
-    JOIN user_details ud ON up.user_id = ud.user_id
-    WHERE u.status = 'ACTIVE'
-      AND u.role = 'USER'
-      AND up.is_completed = true
-      AND up.is_matched = false
-      AND ud.gender = :gender
-      AND up.user_id != :myUserId
-      AND up.user_id NOT IN :withOutList
-      AND NOT EXISTS (
-          SELECT 1
-          FROM match_requests mr
-          WHERE (
-              (mr.sender_id = :myUserId AND mr.receiver_id = up.user_id)
-              OR
-              (mr.sender_id = up.user_id AND mr.receiver_id = :myUserId)
+        SELECT
+            up.user_id AS userId,
+            ROUND(
+                (GREATEST(0, 1 - ((up.lifestyle_vector <-> CAST(:vector AS vector)) / 3.0)) * 100)::numeric,
+                1
+            )::double precision AS matchPercentage
+        FROM user_preferences up
+        JOIN users u ON up.user_id = u.id
+        JOIN user_details ud ON up.user_id = ud.user_id
+        WHERE u.status = 'ACTIVE'
+          AND u.role = 'USER'
+          AND up.is_completed = true
+          AND up.is_matched = false
+          AND up.user_id != :myUserId
+          AND ud.gender = :gender
+          AND up.user_id NOT IN (:excludedUserIds)
+          AND NOT EXISTS (
+              SELECT 1
+              FROM match_requests mr
+              WHERE mr.user_low_id = LEAST(:myUserId, up.user_id)
+                AND mr.user_high_id = GREATEST(:myUserId, up.user_id)
           )
-          AND mr.status IN ('RECOMMENDED', 'SENT', 'PARTIAL_CONFIRMED', 'CONFIRMED', 'REJECTED')
-      )
-    ORDER BY up.lifestyle_vector <-> :vector
-    LIMIT :size
+        ORDER BY up.lifestyle_vector <-> CAST(:vector AS vector)
+        LIMIT :limit
     """, nativeQuery = true)
-    List<Long> findRemainedMatchedUserIds(
+    List<RecommendationCandidate> findNewRecommendationCandidatesIgnoringSmoking(
             @Param("myUserId") Long myUserId,
-            @Param("withOutList") List<Long> withOutList,
-            @Param("size") int size,
             @Param("gender") String gender,
-            @Param("vector") PGvector vector);
+            @Param("excludedUserIds") List<Long> excludedUserIds,
+            @Param("vector") String vector,   // ← String으로
+            @Param("limit") int limit
+    );
+
 }

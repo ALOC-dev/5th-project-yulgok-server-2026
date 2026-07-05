@@ -1,217 +1,408 @@
 package com.dormmatch.domain.matching.service;
 
 import com.dormmatch.domain.matching.dto.MatchingResponseDto;
+import com.dormmatch.domain.matching.dto.PreferredAnswerDto;
 import com.dormmatch.domain.matching.entity.MatchRequests;
 import com.dormmatch.domain.matching.entity.MatchStatus;
 import com.dormmatch.domain.matching.repository.MatchRepository;
 import com.dormmatch.domain.survey.entity.UserPreferences;
-import com.dormmatch.domain.user.entity.UserDetails;
+import com.dormmatch.domain.survey.repository.UserPreferencesRepository;
 import com.dormmatch.domain.user.entity.Users;
+import com.dormmatch.domain.user.repository.UsersRepository;
 import com.dormmatch.global.exception.BusinessException;
 import com.dormmatch.global.exception.ErrorCode;
+import com.fasterxml.jackson.databind.deser.DataFormatReaders;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.dormmatch.domain.matching.util.MatchingDtoMapper.toCardStatus;
 
 @Slf4j
 @Service
 public class MatchingService {
 
     private final MatchRepository matchRepository;
+    private final UserPreferencesRepository userPreferencesRepository;
+    private final UsersRepository usersRepository;
 
     @Autowired
-    public MatchingService(MatchRepository matchRepository){
+    public MatchingService(MatchRepository matchRepository, UserPreferencesRepository userPreferencesRepository, UsersRepository usersRepository){
         this.matchRepository = matchRepository;
+        this.userPreferencesRepository = userPreferencesRepository;
+        this.usersRepository = usersRepository;
     }
+
+
+    @Transactional
+    public void confirm(Long userId, Long receiverId){
+
+        MatchRequests myMatchRequest = matchRepository.findByIds(userId, receiverId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
+
+        MatchStatus myStatus = myMatchRequest.getStatusOf(userId);
+        MatchStatus otherStatus = myMatchRequest.getStatusOf(receiverId);
+
+        if (myStatus == MatchStatus.CLOSED || otherStatus == MatchStatus.CLOSED) {
+            throw new BusinessException(ErrorCode.NOT_CONFIRMABLE_STATUS);
+        }
+
+        if(
+                (myStatus.equals(MatchStatus.HEART) && otherStatus.equals(MatchStatus.HEART))
+                || (myStatus.equals(MatchStatus.HEART) && otherStatus.equals(MatchStatus.FINAL_CONFIRMED))
+        ){
+            myMatchRequest.updateStatusOf(userId, MatchStatus.FINAL_CONFIRMED);
+            if(myMatchRequest.isConfirmed()){
+                myMatchRequest.getUserHighPreferences().updateIsMatched();
+                myMatchRequest.getUserLowPreferences().updateIsMatched();
+
+                closeOtherMatchRequests(userId, myMatchRequest);
+                closeOtherMatchRequests(receiverId, myMatchRequest);
+            }
+
+            return;
+        }
+
+        throw new BusinessException(ErrorCode.NOT_CONFIRMABLE_STATUS);
+    }
+
+    @Transactional
+    public void heart(Long userId, Long receiverId){
+        MatchRequests myMatchRequest = matchRepository.findByIds(userId, receiverId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
+
+
+        MatchStatus myStatus = myMatchRequest.getStatusOf(userId);
+        MatchStatus otherStatus = myMatchRequest.getStatusOf(receiverId);
+
+
+        if (myStatus == MatchStatus.CLOSED || otherStatus == MatchStatus.CLOSED) {
+            throw new BusinessException(ErrorCode.NOT_HEARTABLE_STATUS);
+        }
+
+
+        if(
+                (myStatus.equals(MatchStatus.RECOMMENDED) && otherStatus.equals(MatchStatus.NONE))
+                || (myStatus.equals(MatchStatus.RECOMMENDED) && otherStatus.equals(MatchStatus.RECOMMENDED))
+                || (myStatus.equals(MatchStatus.RECOMMENDED) && otherStatus.equals(MatchStatus.HEART))
+                || (myStatus.equals(MatchStatus.NONE) && otherStatus.equals(MatchStatus.HEART))
+        ){
+            myMatchRequest.updateStatusOf(userId, MatchStatus.HEART);
+            return;
+        }
+
+        throw new BusinessException(ErrorCode.NOT_HEARTABLE_STATUS);
+
+    }
+
+
+    @Transactional
+    public void reject(Long userId, Long receiverId){
+
+        MatchRequests targetMatchRequest = matchRepository.findByIds(userId, receiverId)
+                .orElseThrow(()->new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
+
+        MatchStatus myStatus = targetMatchRequest.getStatusOf(userId);
+        MatchStatus otherStatus = targetMatchRequest.getStatusOf(receiverId);
+
+
+        if (myStatus == MatchStatus.CLOSED || otherStatus == MatchStatus.CLOSED) {
+            throw new BusinessException(ErrorCode.NOT_REJECTABLE_STATUS);
+        }
+
+
+        if(otherStatus == MatchStatus.REJECTED){
+            throw new BusinessException(ErrorCode.NOT_REJECTABLE_STATUS);
+        }
+
+        if(myStatus != MatchStatus.HEART && myStatus != MatchStatus.RECOMMENDED){
+            throw new BusinessException(ErrorCode.NOT_REJECTABLE_STATUS);
+        }
+
+        targetMatchRequest.updateStatusOf(userId, MatchStatus.REJECTED);
+
+    }
+
+
 
     @Transactional(readOnly = true)
     public List<MatchingResponseDto> getMatchingStatus(Long userId){
 
+        List<MatchRequests> myMatchRequests = matchRepository.findAllVisibleByUserId(userId);
 
-        // 매칭이 완료된 상태면 완료된 상대방만 보냄
-        MatchRequests completedMatchRequests = matchRepository.findByUserIdAndStatus(userId, MatchStatus.CONFIRMED)
-                .isPresent() ? matchRepository.findByUserIdAndStatus(userId, MatchStatus.CONFIRMED).get() : null;
-
-        if (completedMatchRequests != null) {
-            boolean isSender = completedMatchRequests.getSender().getId().equals(userId);
-
-            Users matchedUser = isSender
-                    ? completedMatchRequests.getReceiver()
-                    : completedMatchRequests.getSender();
-
-            UserPreferences matchedPreferences = isSender
-                    ? completedMatchRequests.getReceiverPreferences()
-                    : completedMatchRequests.getSenderPreferences();
-
-            UserDetails userDetails = matchedUser.getUserDetails();
-
-            return List.of(MatchingResponseDto.builder()
-                    .userId(matchedUser.getId().toString())
-                    .name(matchedUser.getNickname())
-                    .gender(userDetails.getGender())
-                    .age(userDetails.getAge())
-                    .introduce(matchedPreferences.getIntroduce())
-                    .department(userDetails.getDepartment())
-                    .matchPercentage(completedMatchRequests.getMatchPercentage())
-                    .matchStatus(completedMatchRequests.getStatus())
-                    .build());
+        if(myMatchRequests.isEmpty()){
+            return List.of();
         }
 
-        List<MatchingResponseDto> matchingResponseDtos = new ArrayList<MatchingResponseDto>();
+        List<MatchingResponseDto> matchingResponseDtos = new ArrayList<>();
 
-        // 하트를 보낸 상대방들
-        List<MatchRequests> receivedMatchRequests = matchRepository.findByReceiverIdAndStatusIn(userId, List.of(MatchStatus.SENT));
+        for(MatchRequests matchRequest : myMatchRequests){
+            // 상대방 추출
+            Users other = matchRequest.getUserHigh().getId().equals(userId)
+                    ? matchRequest.getUserLow()
+                    : matchRequest.getUserHigh();
 
-        if(!receivedMatchRequests.isEmpty()) {
-            for (MatchRequests matchRequests : receivedMatchRequests) {
-                Users user = matchRequests.getSender();
-                UserDetails userDetails = user.getUserDetails();
-                MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
-                        .userId(user.getId().toString())
-                        .name(user.getNickname())
-                        .gender(userDetails.getGender())
-                        .age(userDetails.getAge())
-                        .introduce(matchRequests.getSenderPreferences().getIntroduce())
-                        .department(userDetails.getDepartment())
-                        .matchPercentage(matchRequests.getMatchPercentage())
-                        .matchStatus(matchRequests.getStatus())
-                        .build();
-                matchingResponseDtos.add(matchingResponseDto);
-            }
-        }
+            Users me = matchRequest.getUserLow().getId().equals(userId)
+                    ? matchRequest.getUserLow()
+                    : matchRequest.getUserHigh();
 
 
-        // 추천받은 상대방들
-        List<MatchRequests> recommendedMatchRequests = matchRepository.findBySenderIdAndStatusIn(userId, List.of(MatchStatus.RECOMMENDED));
+            MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
+                    .userId(other.getId())
+                    .name(other.getNickname())
+                    .gender(other.getUserDetails().getGender())
+                    .age(other.getUserDetails().getAge())
+                    .introduce(other.getUserPreferences().getIntroduce())
+                    .department(other.getUserDetails().getDepartment())
+                    .matchPercentage(matchRequest.getMatchPercentage())
+                    .matchStatus(matchRequest.getUserLow().equals(other)
+                            ?toCardStatus(matchRequest.getUserHighStatus(),matchRequest.getUserLowStatus())
+                            :toCardStatus(matchRequest.getUserLowStatus(),matchRequest.getUserHighStatus()))
+                    .preferredAnswers(me.getUserPreferences().getVisibleProfileFields().stream()
+                            .distinct()
+                            .limit(3)
+                            .map(field -> PreferredAnswerDto.builder()
+                                    .field(field)
+                                    .value(field.getValueFrom(other.getUserPreferences().getAnswers()))
+                                    .build())
+                            .toList()
+                    )
+                    .build();
 
-        if(!recommendedMatchRequests.isEmpty()) {
-            for (MatchRequests matchRequests : recommendedMatchRequests) {
-                Users user = matchRequests.getReceiver();
-                UserDetails userDetails = user.getUserDetails();
-                MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
-                        .userId(user.getId().toString())
-                        .name(user.getNickname())
-                        .gender(userDetails.getGender())
-                        .age(userDetails.getAge())
-                        .introduce(matchRequests.getReceiverPreferences().getIntroduce())
-                        .department(userDetails.getDepartment())
-                        .matchPercentage(matchRequests.getMatchPercentage())
-                        .matchStatus(matchRequests.getStatus())
-                        .build();
-                matchingResponseDtos.add(matchingResponseDto);
-            }
-        }
-
-
-        // 하트를 보내고 응답을 대기중인 상대방들
-        List<MatchRequests> sentMatchRequests = matchRepository.findBySenderIdAndStatusIn(userId, List.of(MatchStatus.SENT));
-
-        if(!sentMatchRequests.isEmpty()) {
-            for (MatchRequests matchRequests : sentMatchRequests) {
-                Users user = matchRequests.getReceiver();
-                UserDetails userDetails = user.getUserDetails();
-                MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
-                        .userId(user.getId().toString())
-                        .name(user.getNickname())
-                        .gender(userDetails.getGender())
-                        .age(userDetails.getAge())
-                        .introduce(matchRequests.getReceiverPreferences().getIntroduce())
-                        .department(userDetails.getDepartment())
-                        .matchPercentage(matchRequests.getMatchPercentage())
-                        .matchStatus(matchRequests.getStatus())
-                        .build();
-                matchingResponseDtos.add(matchingResponseDto);
-            }
-        }
-
-
-        // 양방향 하트 수락
-        List<MatchRequests> partialConfirmedMatchRequests = matchRepository.findByConditions(userId, userId, List.of(MatchStatus.PARTIAL_CONFIRMED));
-
-        if(!partialConfirmedMatchRequests.isEmpty()) {
-            for (MatchRequests matchRequests : partialConfirmedMatchRequests) {
-
-                boolean isSender = matchRequests.getSender().getId().equals(userId);
-
-                Users user = isSender ? matchRequests.getReceiver() : matchRequests.getSender();
-                UserPreferences userPreferences = isSender ? matchRequests.getReceiverPreferences() : matchRequests.getSenderPreferences();
-                UserDetails userDetails = user.getUserDetails();
-
-                MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
-                        .userId(user.getId().toString())
-                        .name(user.getNickname())
-                        .gender(userDetails.getGender())
-                        .age(userDetails.getAge())
-                        .introduce(userPreferences.getIntroduce())
-                        .department(userDetails.getDepartment())
-                        .matchPercentage(matchRequests.getMatchPercentage())
-                        .matchStatus(matchRequests.getStatus())
-                        .build();
-                matchingResponseDtos.add(matchingResponseDto);
-            }
-        }
-
-        if(matchingResponseDtos.isEmpty()) {
-            throw new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND);
+            matchingResponseDtos.add(matchingResponseDto);
         }
 
         return matchingResponseDtos;
     }
 
-
-    @Transactional
-    public String sendHeartToReceiver(Long userId, Long receiverId){
-
-        List<MatchRequests> matchRequests = matchRepository.findBySenderIdAndReceiverIdAndStatusIn(userId, receiverId, List.of(MatchStatus.RECOMMENDED));
-
-        if(!matchRequests.isEmpty()) {
-            log.info("Heart sent successfully for user {} and receiver {}", userId, receiverId);
-            matchRequests.forEach(matchRequests1 -> matchRequests1.updateStatus(MatchStatus.SENT));
-            return "SENT";
+    private record Candidate(
+            MatchRequests existingMatchRequest,
+            Long newUserId,
+            double matchPercentage
+    ) {
+        static Candidate existing(MatchRequests matchRequest) {
+            return new Candidate(
+                    matchRequest,
+                    null,
+                    matchRequest.getMatchPercentage()
+            );
         }
 
-        List<MatchRequests> matchRequests2 = matchRepository.findBySenderIdAndReceiverIdAndStatusIn(receiverId, userId, List.of(MatchStatus.SENT));
-
-        if(matchRequests2.isEmpty()) {
-            log.warn("No matching request found for user {} and receiver {}", userId, receiverId);
-            throw new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND);
+        static Candidate fresh(UserPreferencesRepository.RecommendationCandidate candidate) {
+            return new Candidate(
+                    null,
+                    candidate.getUserId(),
+                    candidate.getMatchPercentage()
+            );
         }
 
-        matchRequests2.forEach(matchRequests1 -> matchRequests1.updateStatus(MatchStatus.PARTIAL_CONFIRMED));
-
-        UserPreferences userPreferences = matchRequests2.get(0).getSenderPreferences();
-        userPreferences.updateIsMatched();
-        userPreferences = matchRequests2.get(0).getReceiverPreferences();
-        userPreferences.updateIsMatched();
-
-
-        log.info("Match made between user {} and receiver {}", userId, receiverId);
-        return "PARTIAL_CONFIRMED";
+        boolean isExisting() {
+            return existingMatchRequest != null;
+        }
     }
 
     @Transactional
-    public void rejectHeart(Long userId, Long receiverId){
-        List<MatchRequests> matchRequests = matchRepository.findBySenderIdAndReceiverIdAndStatusIn(userId, receiverId, List.of(MatchStatus.RECOMMENDED));
+    public void match(Long userId){
 
-        if(!matchRequests.isEmpty()) {
-            matchRequests.forEach(matchRequests1 -> matchRequests1.updateStatus(MatchStatus.REJECTED));
-            log.info("Heart rejection successful for user {} and receiver {}", userId, receiverId);
-            return;
+        Users me = usersRepository.findById(userId)
+                .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if(me.getUserPreferences().getIsMatched()){
+            throw new BusinessException(ErrorCode.ALREADY_CONFIRMED);
         }
 
-        List<MatchRequests> matchRequests2 = matchRepository.findBySenderIdAndReceiverIdAndStatusIn(receiverId, userId, List.of(MatchStatus.SENT));
+        LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
+        LocalDateTime startOfTomorrow = LocalDate.now().plusDays(1).atStartOfDay();
 
-        if(!matchRequests2.isEmpty()) {
-            log.info("Heart rejection successful for user {} and receiver {}", userId, receiverId);
-            matchRequests2.forEach(matchRequests1 -> matchRequests1.updateStatus(MatchStatus.REJECTED));
-            return;
+        LocalDateTime myRerolledAt = me.getUserPreferences().getRerolledAt();
+
+        boolean isRerolledToday = myRerolledAt != null
+                && !myRerolledAt.isBefore(startOfToday)
+                && myRerolledAt.isBefore(startOfTomorrow);
+
+        if (isRerolledToday) {
+            throw new BusinessException(ErrorCode.MATCH_ALREADY_REROLLED_TODAY);
         }
 
-        log.warn("No matching request found for user {} and receiver {}", userId, receiverId);
-        throw new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND);
+        UserPreferences myPreference = userPreferencesRepository.findByUserIdWithUserDetails(userId)
+                .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        String gender = myPreference.getUser().getUserDetails().getGender();
+        Integer smokingStatus = myPreference.getSmokingStatus();
+        float[] vec = myPreference.getLifestyleVector();
+        String vector = Arrays.toString(vec).replace(" ", "");
+
+
+        List<MatchRequests> reusableMatches =  matchRepository.findReusableCandidatesWithSmoking(
+                userId,
+                smokingStatus,
+                PageRequest.of(0,3)
+        );
+
+        List<UserPreferencesRepository.RecommendationCandidate> recommendationCandidates = userPreferencesRepository.findNewRecommendationCandidates(
+                userId,
+                gender,
+                smokingStatus,
+                vector,
+                3
+        );
+
+        List<Candidate> candidates = new ArrayList<>();
+
+        for(MatchRequests matchRequests : reusableMatches){
+            candidates.add(Candidate.existing(matchRequests));
+        }
+
+        for(UserPreferencesRepository.RecommendationCandidate freshCandidate : recommendationCandidates){
+            candidates.add(Candidate.fresh(freshCandidate));
+        }
+
+        List<Candidate> selected = candidates.stream()
+                .sorted((a,b) -> Double.compare(b.matchPercentage(), a.matchPercentage()))
+                .limit(3)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        int needed = 3 - selected.size();
+
+        if(needed != 0){
+
+            List<Long> selectedUserIds = selected.stream()
+                    .map(candidate -> {
+                        if(candidate.isExisting()){
+                            MatchRequests matchRequests = candidate.existingMatchRequest();
+
+                            return matchRequests.getUserLow().getId().equals(userId)
+                                    ? matchRequests.getUserHigh().getId()
+                                    : matchRequests.getUserLow().getId();
+                        }
+
+                        return candidate.newUserId();
+
+                    })
+                    .toList();
+
+            List<MatchRequests> reusableMatchesIgnoreSmoking = matchRepository.findReusableCandidatesIgnoringSmoking(
+                    userId,
+                    PageRequest.of(0, selectedUserIds.size() + needed)
+            );
+
+
+            List<Long> excludedUserIds = selectedUserIds.isEmpty()
+                    ? List.of(-1L)
+                    : selectedUserIds;
+
+            List<UserPreferencesRepository.RecommendationCandidate> recommendationCandidatesIgnoreSmoking = userPreferencesRepository.findNewRecommendationCandidatesIgnoringSmoking(
+                    userId,
+                    gender,
+                    excludedUserIds,
+                    vector,
+                    needed
+            );
+
+            List<Candidate> candidates2 = new ArrayList<>();
+
+            for (MatchRequests matchRequests : reusableMatchesIgnoreSmoking) {
+                Long candidateUserId = matchRequests.getUserLow().getId().equals(userId)
+                        ? matchRequests.getUserHigh().getId()
+                        : matchRequests.getUserLow().getId();
+
+                if (!selectedUserIds.contains(candidateUserId)) {
+                    candidates2.add(Candidate.existing(matchRequests));
+                }
+            }
+
+            for(UserPreferencesRepository.RecommendationCandidate freshCandidate : recommendationCandidatesIgnoreSmoking){
+                candidates2.add(Candidate.fresh(freshCandidate));
+            }
+
+            selected.addAll(
+                    candidates2.stream()
+                            .sorted((a, b) -> Double.compare(b.matchPercentage(), a.matchPercentage()))
+                            .limit(needed)
+                            .toList()
+            );
+        }
+
+
+
+        for (Candidate candidate : selected) {
+            if (candidate.isExisting()) {
+                candidate.existingMatchRequest()
+                        .updateStatusOf(userId, MatchStatus.RECOMMENDED);
+            } else {
+                MatchRequests newMatchRequest = createMatchRequest(
+                        userId,
+                        candidate.newUserId(),
+                        candidate.matchPercentage()
+                );
+
+                matchRepository.save(newMatchRequest);
+            }
+        }
+
+        myPreference.updateIsRerolled();
+
     }
+
+
+    private MatchRequests createMatchRequest(
+            Long myUserId,
+            Long otherUserId,
+            Double matchPercentage
+    ){
+        Users me = usersRepository.findById(myUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        Users other = usersRepository.findById(otherUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        Users higher = (myUserId >= otherUserId)? me:other;
+        Users lower = (myUserId >= otherUserId)? other:me;
+
+        MatchRequests newMatchRequest = MatchRequests.builder()
+                .userHigh(higher)
+                .userLow(lower)
+                .userHighPreferences(higher.getUserPreferences())
+                .userLowPreferences(lower.getUserPreferences())
+                .matchPercentage(matchPercentage)
+                .userHighStatus((myUserId >= otherUserId)?MatchStatus.RECOMMENDED:MatchStatus.NONE)
+                .userLowStatus((myUserId >= otherUserId)?MatchStatus.NONE:MatchStatus.RECOMMENDED)
+                .build();
+
+        return newMatchRequest;
+    }
+
+    private double calculateMatchPercentage(double[] firstVector, double[] secondVector ){
+
+        double sum = 0.0;
+
+        for(int i = 0; i < firstVector.length; i++){
+            double diff = firstVector[i] - secondVector[i];
+            sum += diff * diff;
+        }
+
+        double similarity = Math.sqrt(sum);
+        double percentage = Math.max(0, 1 - (similarity/3.0)) * 100;
+        return Math.round(percentage*10.0) / 10.0;
+
+    }
+
+
+    private void closeOtherMatchRequests(Long userId, MatchRequests confirmedMatchRequest){
+        List<MatchRequests> myOtherMatchRequests = matchRepository.findAllByUserIdExceptConfirmed(userId, confirmedMatchRequest.getId());
+
+        for(MatchRequests matchRequest : myOtherMatchRequests){
+            matchRequest.updateStatusOf(userId, MatchStatus.CLOSED);
+        }
+    }
+
+
 }

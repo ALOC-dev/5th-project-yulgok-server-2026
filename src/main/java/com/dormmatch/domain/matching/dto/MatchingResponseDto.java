@@ -1,7 +1,10 @@
 package com.dormmatch.domain.matching.dto;
 
 import com.dormmatch.domain.matching.entity.MatchStatus;
+import com.dormmatch.domain.survey.entity.SurveyAnswerField;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -11,27 +14,31 @@ import lombok.*;
 public class MatchingResponseDto {
 
     // 외부 공개용 userId;
-    String userId;
+    private Long userId;
 
     // 학생 이름
-    String name;
+    private String name;
 
     // 성별
-    String gender;
+    private String gender;
 
     // 나이
-    Integer age;
+    private Integer age;
 
     // 자기소개
-    String introduce;
+    private String introduce;
 
     // 학과, 학번
-    String department;
+    private String department;
 
     // 매칭 점수
-    Double matchPercentage;
+    private Double matchPercentage;
 
-    // 매칭 상태
-    MatchStatus matchStatus;
+    //매칭 상태
+    private MatchCardStatus matchStatus;
+
+
+    // 요청자 선택 응답
+    List<PreferredAnswerDto> preferredAnswers;
 
 }

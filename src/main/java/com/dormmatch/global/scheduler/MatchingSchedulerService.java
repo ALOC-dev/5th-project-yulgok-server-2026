@@ -33,69 +33,6 @@ public class MatchingSchedulerService {
 
     @Transactional
     public void processMatching() {
-        List<MatchRequests> matchRequestsList = matchRepository.findAllByStatus(MatchStatus.RECOMMENDED);
-
-        matchRequestsList.forEach(matchRequests -> matchRequests.updateStatus(MatchStatus.REJECTED));
-
-        List<UserPreferences> userPreferencesList = userPreferencesRepository.findByIsMatchedFalseAndIsCompletedTrue();
-
-        for(UserPreferences userPreferences : userPreferencesList) {
-
-            Users me = userPreferences.getUser();
-
-            if(userPreferences.getIsMatched())    continue;
-
-            String gender = me.getUserDetails().getGender();
-
-            float[] floatVec = toFloatArray(userPreferences.getLifestyleVector());
-            PGvector vector = new PGvector(floatVec);
-
-            // 2. TOP 3 조회
-            List<Long> matchedIds = userPreferencesRepository.findTop3MatchedUserIds(
-                    me.getId(),
-                    userPreferences.getSmokingStatus(),
-                    gender,
-                    vector
-            );
-
-            List<Long> finalMatchedIds = new ArrayList<Long>(matchedIds);
-
-            if (matchedIds.size() < 3) {
-                List<Long> remainedMatchedUserIds = userPreferencesRepository.findRemainedMatchedUserIds(
-                        me.getId(),
-                        finalMatchedIds.isEmpty() ? List.of(-1L):matchedIds,
-                        3 - matchedIds.size(),
-                        gender,
-                        vector
-                );
-
-                finalMatchedIds.addAll(remainedMatchedUserIds);
-            }
-
-            if(finalMatchedIds.isEmpty()) continue;
-
-            // 3. MatchRequests 생성
-            List<MatchRequests> requests = finalMatchedIds.stream()
-                    .map(receiverId -> {
-                        UserPreferences receiverPrefs = userPreferencesRepository
-                                .findByUserId(receiverId).get();
-
-                        return MatchRequests.builder()
-                                .sender(me)
-                                .receiver(receiverPrefs.getUser())
-                                .status(MatchStatus.RECOMMENDED)
-                                .senderPreferences(userPreferences)
-                                .receiverPreferences(receiverPrefs)
-                                .matchPercentage(getDistance(
-                                        userPreferences.getLifestyleVector(),
-                                        receiverPrefs.getLifestyleVector()
-                                ))
-                                .build();
-                    })
-                    .toList();
-
-            matchRepository.saveAll(requests);
-        }
 
     }
 

@@ -1,5 +1,6 @@
 package com.dormmatch.domain.user.entity;
 
+import com.dormmatch.domain.survey.entity.UserPreferences;
 import com.github.f4b6a3.ulid.UlidCreator;
 import jakarta.persistence.*;
 import lombok.*;
@@ -43,6 +44,10 @@ public class Users {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserDetails userDetails;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserPreferences userPreferences;
+
 
     @PrePersist
     protected void onCreate() {

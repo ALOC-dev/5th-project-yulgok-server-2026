@@ -44,6 +44,10 @@ public enum ErrorCode {
     SURVEY_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "이미 설문을 제출한 상태입니다."),
     HEART_ALREADY_SENT(HttpStatus.CONFLICT, "이미 해당 유저에게 하트를 보냈습니다."),
     ALREADY_CONFIRMED(HttpStatus.CONFLICT, "이미 확정한 상태입니다."),
+    MATCH_ALREADY_REROLLED_TODAY(HttpStatus.CONFLICT, "오늘은 이미 매칭 추천을 완료했습니다."),
+    NOT_REJECTABLE_STATUS(HttpStatus.CONFLICT, "거절할 수 없는 상태입니다."),
+    NOT_HEARTABLE_STATUS(HttpStatus.CONFLICT, "하트를 전달할 수 없는 상태입니다."),
+    NOT_CONFIRMABLE_STATUS(HttpStatus.CONFLICT, "매칭을 확정할 수 없는 상태입니다."),
 
     // ── 422 ──
     NOT_ACCEPTED_STATUS(HttpStatus.UNPROCESSABLE_ENTITY, "ACCEPTED 상태에서만 확정할 수 있습니다."),

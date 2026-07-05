@@ -21,29 +21,31 @@ public class MatchRequests {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "sender_id")
-    private Users sender;
+    @JoinColumn(name = "user_low_id")
+    private Users userLow;
 
     @ManyToOne
-    @JoinColumn(name = "receiver_id")
-    private Users receiver;
+    @JoinColumn(name = "user_high_id")
+    private Users userHigh;
 
     @ManyToOne
-    @JoinColumn(name = "receiver_preferences_id")
-    private UserPreferences receiverPreferences;
+    @JoinColumn(name = "user_low_preferences_id")
+    private UserPreferences userLowPreferences;
 
     @ManyToOne
-    @JoinColumn(name = "sender_preferences_id")
-    private UserPreferences senderPreferences;
+    @JoinColumn(name = "user_high_preferences_id")
+    private UserPreferences userHighPreferences;
 
     @Column
     private Double matchPercentage;
 
-    @Column(nullable = false)
-    private MatchStatus status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "user_low_status")
+    private MatchStatus userLowStatus;
 
-    @Column
-    private LocalDateTime matchedAt;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "user_high_status")
+    private MatchStatus userHighStatus;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -53,12 +55,41 @@ public class MatchRequests {
         this.createdAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.matchedAt = LocalDateTime.now();
+
+    public MatchStatus getStatusOf(Long userId) {
+        if (userLow.getId().equals(userId)) {
+            return userLowStatus;
+        }
+        if (userHigh.getId().equals(userId)) {
+            return userHighStatus;
+        }
+        throw new IllegalArgumentException("User is not part of this match request.");
     }
 
-    public void updateStatus(MatchStatus status) {
-        this.status = status;
+    public void updateStatusOf(Long userId, MatchStatus status) {
+        if (userLow.getId().equals(userId)) {
+            this.userLowStatus = status;
+            return;
+        }
+        if (userHigh.getId().equals(userId)) {
+            this.userHighStatus = status;
+            return;
+        }
+        throw new IllegalArgumentException("User is not part of this match request.");
+    }
+
+    public boolean isHeartMatched() {
+        return userLowStatus == MatchStatus.HEART
+                && userHighStatus == MatchStatus.HEART;
+    }
+
+    public boolean isConfirmed() {
+        return userLowStatus == MatchStatus.FINAL_CONFIRMED
+                && userHighStatus == MatchStatus.FINAL_CONFIRMED;
+    }
+
+    public boolean isRejected() {
+        return userLowStatus == MatchStatus.REJECTED
+                || userHighStatus == MatchStatus.REJECTED;
     }
 }
