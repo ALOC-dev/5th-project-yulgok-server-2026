@@ -39,7 +39,7 @@ public class SurveyController {
     @PostMapping("/api/surveys")
     @RequiresAuth
     public ResponseEntity<GlobalApiResponse<?>> saveUserPreferences(
-            @AuthenticationPrincipal Long userId,
+            @AuthenticationPrincipal String userId,
             @Valid @RequestBody UserPreferencesRequestDto requestDto){
 
         surveyService.saveSurveyStatus(userId, requestDto);
@@ -59,7 +59,7 @@ public class SurveyController {
     @RequiresAuth
     @RequiresSurvey
     public ResponseEntity<GlobalApiResponse<?>> getUserPreferences(
-            @AuthenticationPrincipal Long userId
+            @AuthenticationPrincipal String userId
     ){
         UserPreferencesResponseDto responseDto = surveyService.getSurveyStatus(userId);
 

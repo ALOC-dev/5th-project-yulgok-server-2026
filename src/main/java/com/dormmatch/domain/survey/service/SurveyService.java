@@ -21,16 +21,19 @@ public class SurveyService {
     }
 
     @Transactional
-    public UserPreferencesResponseDto getSurveyStatus(Long userId){
+    public UserPreferencesResponseDto getSurveyStatus(String userId){
+        Long userPk = Long.valueOf(userId);
 
-        UserPreferences userPreferences = userPreferencesRepository.findByUserId(userId).get();
+        UserPreferences userPreferences = userPreferencesRepository.findByUserId(userPk).get();
 
         return UserPreferencesDtoMapper.toDto(userPreferences);
     }
 
     @Transactional
-    public void saveSurveyStatus(Long userId, UserPreferencesRequestDto requestDto){
-        UserPreferences userPreferences = userPreferencesRepository.findByUserId(userId)
+    public void saveSurveyStatus(String userId, UserPreferencesRequestDto requestDto){
+        Long userPk = Long.valueOf(userId);
+
+        UserPreferences userPreferences = userPreferencesRepository.findByUserId(userPk)
                 .orElseThrow(()->new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
         SurveyAnswers surveyAnswers = userPreferences.getAnswers();

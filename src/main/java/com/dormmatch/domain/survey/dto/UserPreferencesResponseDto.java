@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class UserPreferencesResponseDto {
 
-    private Long userId;
+    private String userId;
     private Boolean isCompleted;
     private Boolean isLocked;
     private Integer smokingStatus;

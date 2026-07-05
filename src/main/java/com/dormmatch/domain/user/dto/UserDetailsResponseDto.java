@@ -7,7 +7,7 @@ import lombok.Getter;
 @Builder
 public class UserDetailsResponseDto {
 
-    private final Long userId;
+    private final String userId;
     private final String realName;
     private final String studentId;
     private final Integer age;

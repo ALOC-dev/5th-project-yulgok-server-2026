@@ -35,15 +35,16 @@ public class UserDetailsService {
      * @Transactional: 값의 수정/생성이 일어나므로, 도중에 에러가 나면 전부 취소되도록 안전장치를 켭니다.
      */
     @Transactional
-    public UserDetailsResponseDto createDetails(Long userId, UserDetailsRequestDto request) {
+    public UserDetailsResponseDto createDetails(String userId, UserDetailsRequestDto request) {
+        Long userPk = Long.valueOf(userId);
         // 이미 상세 정보가 등록된 유저인지 검사합니다.
-        if (userDetailsRepository.existsById(userId)) {
+        if (userDetailsRepository.existsById(userPk)) {
             // 이미 존재한다면 예외(409 Conflict)를 발생시킵니다.
             throw new BusinessException(ErrorCode.DETAILS_ALREADY_EXISTS);
         }
 
         // 토큰에서 꺼낸 userId가 실제로 가입된 유저인지 확인합니다.
-        Users user = usersRepository.findById(userId)
+        Users user = usersRepository.findById(userPk)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)); // 없으면 404 에러
 
         //입력받은 데이터(Dto)를 바탕으로 실제 DB 테이블 모양새의 객체(Entity)를 조립합니다.
@@ -65,14 +66,15 @@ public class UserDetailsService {
     /**
      * 유저 본인의 통합 프로필 정보를 조회합니다
      */
-    public UserProfileResponseDto getProfile(Long userId) {
+    public UserProfileResponseDto getProfile(String userId) {
+        Long userPk = Long.valueOf(userId);
         // 1. 기본 유저 정보(이메일, 닉네임 등)를 DB에서 찾습니다.
-        Users user = usersRepository.findById(userId)
+        Users user = usersRepository.findById(userPk)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 2. 추가 상세 정보(학번, 학과 등)도 DB에서 찾습니다.
         // 필수 정보를 아직 입력 안 했을 수도 있으므로, 여기선 에러를 내지 않고 'null'이 되도록 .orElse(null) 처리를 합니다.
-        UserDetails userDetails = userDetailsRepository.findById(userId).orElse(null);
+        UserDetails userDetails = userDetailsRepository.findById(userPk).orElse(null);
 
         // 3. 두 테이블에서 긁어온 정보를 (UserProfileResponseDto)에 합쳐서 담아 반환합니다.
         return UserProfileResponseDto.builder()
@@ -91,9 +93,10 @@ public class UserDetailsService {
      * @Transactional: DB 내 데이터의 실제 변경(Update)이 일어나므로 트랜잭션을 켭니다.
      */
     @Transactional
-    public UserProfileUpdateResponseDto updateProfile(Long userId, UserProfileUpdateRequestDto request) {
+    public UserProfileUpdateResponseDto updateProfile(String userId, UserProfileUpdateRequestDto request) {
+        Long userPk = Long.valueOf(userId);
         // 1. 수정할 유저를 DB에서 찾습니다.
-        Users user = usersRepository.findById(userId)
+        Users user = usersRepository.findById(userPk)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 2. 더티 체킹: 엔티티 객체의 값을 바꿔줍니다.
@@ -115,7 +118,7 @@ public class UserDetailsService {
      */
     private UserDetailsResponseDto toResponse(UserDetails userDetails) {
         return UserDetailsResponseDto.builder()
-                .userId(userDetails.getUserId())
+                .userId(userDetails.getUserId().toString())
                 .realName(userDetails.getRealName())
                 .studentId(userDetails.getStudentId())
                 .age(userDetails.getAge())

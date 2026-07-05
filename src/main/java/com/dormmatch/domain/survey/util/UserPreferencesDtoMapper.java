@@ -16,7 +16,7 @@ public class UserPreferencesDtoMapper {
 
     public static UserPreferencesResponseDto toDto(UserPreferences userPreferences) {
         return UserPreferencesResponseDto.builder()
-                .userId(userPreferences.getUserId())
+                .userId(userPreferences.getUserId().toString())
                 .isCompleted(userPreferences.getIsCompleted())
                 .isLocked(false)
                 .smokingStatus(userPreferences.getSmokingStatus())

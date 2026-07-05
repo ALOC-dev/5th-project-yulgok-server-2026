@@ -14,7 +14,7 @@ public class LoginResponseDto {
     private final Boolean isNewUser;
     private final UserInfo user;
 
-    private final Long userId;
+    private final String userId;
     private final String tokenType;
     private final Long accessTokenExpiresIn;
 
