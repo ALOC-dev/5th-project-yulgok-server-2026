@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SurveyService {
 
-    private UsersRepository usersRepository;
-    private UserPreferencesRepository userPreferencesRepository;
+    final private UsersRepository usersRepository;
+    final private UserPreferencesRepository userPreferencesRepository;
 
     @Autowired
     public SurveyService(UserPreferencesRepository userPreferencesRepository,
@@ -27,10 +27,12 @@ public class SurveyService {
         this.usersRepository = usersRepository;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public UserPreferencesResponseDto getSurveyStatus(Long userId){
 
-        UserPreferences userPreferences = userPreferencesRepository.findByUserId(userId).get();
+        UserPreferences userPreferences = userPreferencesRepository.findByUserId(userId)
+                .orElseThrow(()->new BusinessException(ErrorCode.SURVEY_NOT_FOUND));
+
 
         return UserPreferencesDtoMapper.toDto(userPreferences);
     }
@@ -44,6 +46,16 @@ public class SurveyService {
         if(userPreferencesRepository.findByUserId(userId).isPresent()) {
             throw new BusinessException(ErrorCode.SURVEY_ALREADY_SUBMITTED);
         }
+
+        int size = requestDto.getVisibleProfileFields().size();
+        long distinctSize = requestDto.getVisibleProfileFields().stream()
+                .distinct()
+                .count();
+
+        if (size != distinctSize) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
 
         SurveyAnswers surveyAnswers = SurveyAnswers.builder()
                         .bedtime(requestDto.getAnswers().getBedtime())
@@ -64,6 +76,7 @@ public class SurveyService {
                         .user(user)
                         .isCompleted(true)
                         .isMatched(false)
+                        .visibleProfileFields(requestDto.getVisibleProfileFields())
                         .build());
     }
 

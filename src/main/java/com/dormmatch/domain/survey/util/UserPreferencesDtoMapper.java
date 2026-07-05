@@ -11,6 +11,7 @@ public class UserPreferencesDtoMapper {
                 .smokingStatus(requestDto.getSmokingStatus())
                 .introduce(requestDto.getIntroduce())
                 .answers(requestDto.getAnswers())
+                .visibleProfileFields(requestDto.getVisibleProfileFields())
                 .build();
     }
 
@@ -23,6 +24,7 @@ public class UserPreferencesDtoMapper {
                 .answers(userPreferences.getAnswers())
                 .createdAt(userPreferences.getCreatedAt())
                 .updatedAt(userPreferences.getUpdatedAt())
+                .visibleProfileFields(userPreferences.getVisibleProfileFields())
                 .build();
     }
 
