@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-//서비스에 필요한 메소드들 정의
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
     // 특정 채팅방 메시지 최신순으로 가져오는 메소드

@@ -16,6 +16,7 @@ public class ChatRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 하나의 매칭 요청에서 채팅방이 중복 생성되지 않도록 unique 제약을 둔다.
     //MatchRequest 엔티티 생기면 수정하자.
     @Column(name = "match_request_id", nullable = false, unique = true)
     private Long matchRequestId;
