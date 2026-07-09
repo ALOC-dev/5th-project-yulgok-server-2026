@@ -8,6 +8,7 @@ import com.dormmatch.domain.chat.dto.ChatRoomsResponseDto;
 import com.dormmatch.domain.chat.dto.ChatUnreadCountResponseDto;
 import com.dormmatch.domain.chat.entity.ChatMessage;
 import com.dormmatch.domain.chat.entity.ChatRoom;
+import com.dormmatch.domain.chat.entity.ChatRoomStatus;
 import com.dormmatch.domain.chat.repository.ChatMessageRepository;
 import com.dormmatch.domain.chat.repository.ChatRoomRepository;
 import com.dormmatch.global.exception.BusinessException;
@@ -146,6 +147,11 @@ public class ChatService {
     @Transactional
     public ChatRoom createChatRoomIfNotExists(Long matchRequestId) {
         return chatRoomRepository.findByMatchRequestId(matchRequestId)
-                .orElseGet(() -> chatRoomRepository.save(ChatRoom.create(matchRequestId)));
+                .orElseGet(() -> chatRoomRepository.save(
+                        ChatRoom.builder()
+                                .matchRequestId(matchRequestId)
+                                .status(ChatRoomStatus.OPEN)
+                                .build()
+                ));
     }
 }

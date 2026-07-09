@@ -1,15 +1,16 @@
 package com.dormmatch.domain.chat.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "chat_rooms")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 public class ChatRoom {
 
     @Id
@@ -25,34 +26,10 @@ public class ChatRoom {
     @Column(nullable = false)
     private ChatRoomStatus status = ChatRoomStatus.OPEN;
 
-    @Column(name = "sender_selected", nullable = false)
-    private Boolean senderSelected = false;
-
-    @Column(name = "receiver_selected", nullable = false)
-    private Boolean receiverSelected = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public static ChatRoom create(Long matchRequestId) {
-        ChatRoom chatRoom = new ChatRoom();
-        chatRoom.matchRequestId = matchRequestId;
-        chatRoom.status = ChatRoomStatus.OPEN;
-        return chatRoom;
-    }
-    
-    public void selectBySender() {
-        this.senderSelected = true;
-    }
-
-    public void selectByReceiver() {
-        this.receiverSelected = true;
-    }
-
-    public boolean isBothSelected() {
-        return Boolean.TRUE.equals(senderSelected)
-                && Boolean.TRUE.equals(receiverSelected);
-    }
 
     @PrePersist
     protected void onCreate()
