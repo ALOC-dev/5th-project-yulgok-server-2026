@@ -11,7 +11,6 @@ import com.dormmatch.domain.user.entity.Users;
 import com.dormmatch.domain.user.repository.UsersRepository;
 import com.dormmatch.global.exception.BusinessException;
 import com.dormmatch.global.exception.ErrorCode;
-import com.fasterxml.jackson.databind.deser.DataFormatReaders;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -75,6 +74,8 @@ public class MatchingService {
         throw new BusinessException(ErrorCode.NOT_CONFIRMABLE_STATUS);
     }
 
+
+
     @Transactional
     public void heart(Long userId, Long receiverId){
         MatchRequests myMatchRequest = matchRepository.findByIds(userId, receiverId)
@@ -105,6 +106,7 @@ public class MatchingService {
     }
 
 
+
     @Transactional
     public void reject(Long userId, Long receiverId){
 
@@ -129,7 +131,6 @@ public class MatchingService {
         }
 
         targetMatchRequest.updateStatusOf(userId, MatchStatus.REJECTED);
-
     }
 
 
@@ -156,6 +157,10 @@ public class MatchingService {
                     : matchRequest.getUserHigh();
 
 
+            LocalDateTime recommendedAt = matchRequest.getUserLow().getId().equals(userId)
+                    ? matchRequest.getUserLowRecommendedAt()
+                    : matchRequest.getUserHighRecommendedAt();
+
             MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
                     .userId(other.getId())
                     .name(other.getNickname())
@@ -176,6 +181,7 @@ public class MatchingService {
                                     .build())
                             .toList()
                     )
+                    .matchDate(recommendedAt)
                     .build();
 
             matchingResponseDtos.add(matchingResponseDto);
@@ -333,6 +339,10 @@ public class MatchingService {
         }
 
 
+        if(selected.isEmpty()){
+            throw new BusinessException(ErrorCode.MATCH_CANDIDATE_NOT_FOUND);
+        }
+
 
         for (Candidate candidate : selected) {
             if (candidate.isExisting()) {
@@ -378,21 +388,6 @@ public class MatchingService {
                 .build();
 
         return newMatchRequest;
-    }
-
-    private double calculateMatchPercentage(double[] firstVector, double[] secondVector ){
-
-        double sum = 0.0;
-
-        for(int i = 0; i < firstVector.length; i++){
-            double diff = firstVector[i] - secondVector[i];
-            sum += diff * diff;
-        }
-
-        double similarity = Math.sqrt(sum);
-        double percentage = Math.max(0, 1 - (similarity/3.0)) * 100;
-        return Math.round(percentage*10.0) / 10.0;
-
     }
 
 

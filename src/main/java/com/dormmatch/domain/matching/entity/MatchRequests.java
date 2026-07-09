@@ -50,6 +50,12 @@ public class MatchRequests {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "user_low_recommended_at")
+    private LocalDateTime userLowRecommendedAt;
+
+    @Column(name = "user_high_recommended_at")
+    private LocalDateTime userHighRecommendedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -69,12 +75,20 @@ public class MatchRequests {
     public void updateStatusOf(Long userId, MatchStatus status) {
         if (userLow.getId().equals(userId)) {
             this.userLowStatus = status;
+            if (status == MatchStatus.RECOMMENDED) {
+                this.userLowRecommendedAt = LocalDateTime.now();
+            }
             return;
         }
+
         if (userHigh.getId().equals(userId)) {
             this.userHighStatus = status;
+            if (status == MatchStatus.RECOMMENDED) {
+                this.userHighRecommendedAt = LocalDateTime.now();
+            }
             return;
         }
+
         throw new IllegalArgumentException("User is not part of this match request.");
     }
 

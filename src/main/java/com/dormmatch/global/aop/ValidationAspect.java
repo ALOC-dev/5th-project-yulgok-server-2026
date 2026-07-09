@@ -38,13 +38,14 @@ public class ValidationAspect {
     public void checkSurveyCompleted(JoinPoint joinPoint){
         Long userId = extractUserId(joinPoint);
 
-        Boolean surveyCompleted = userPreferencesRepository
+        boolean surveyCompleted = userPreferencesRepository
                 .findByUserId(userId)
-                .orElseThrow(()->new BusinessException(ErrorCode.SURVEY_NOT_FOUND))
-                .getIsCompleted();
+                .map(UserPreferences::getIsCompleted)
+                .orElse(false);
 
-        if(surveyCompleted == false)
-            throw new BusinessException(ErrorCode.SURVEY_NOT_FOUND);
+        if (!surveyCompleted) {
+            throw new BusinessException(ErrorCode.SURVEY_REQUIRED);
+        }
     }
 
 
@@ -98,6 +99,6 @@ public class ValidationAspect {
                 return (Long) args;
             }
         }
-        throw new IllegalStateException("userId를 찾을 수 없습니다.");
+        throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
 }

@@ -4,6 +4,7 @@ import com.dormmatch.domain.matching.entity.MatchStatus;
 import com.dormmatch.domain.survey.entity.SurveyAnswerField;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -37,6 +38,8 @@ public class MatchingResponseDto {
     //매칭 상태
     private MatchCardStatus matchStatus;
 
+    // 매칭된 날짜
+    private LocalDateTime matchDate;
 
     // 요청자 선택 응답
     List<PreferredAnswerDto> preferredAnswers;

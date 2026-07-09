@@ -18,7 +18,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController("/api/matching")
+@RestController
+@RequestMapping("/api/matching")
 public class MatchingController {
 
 
@@ -36,10 +37,9 @@ public class MatchingController {
             @ApiResponse(responseCode = "403", description = "인증 또는 설문 작성이 완료되지 않았습니다.")
     })
 //    @RequiresAuth   @RequiresCertification  @RequiresSurvey
-    @GetMapping("/api/matching/status/")
+    @GetMapping("/status")
     public ResponseEntity<GlobalApiResponse<?>> getMatchingStatus(
-//            @AuthenticationPrincipal Long userId
-            @RequestParam Long userId
+            @AuthenticationPrincipal Long userId
     ){
         List<MatchingResponseDto> responseDtos = matchingService.getMatchingStatus(userId);
 
@@ -61,7 +61,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "404", description = "유저 또는 설문 정보를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "409", description = "이미 최종 매칭되었거나 오늘 이미 매칭 추천을 완료했습니다.")
     })
-    @PostMapping("/api/matching/match")
+    @PostMapping("/match")
     public ResponseEntity<GlobalApiResponse<?>> match(
             @AuthenticationPrincipal Long userId
     ){
@@ -79,7 +79,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 하트 전달 또는 거절을 할 수 없습니다.")
     })
 //    @RequiresAuth   @RequiresCertification  @RequiresSurvey
-    @PatchMapping("/api/matching/requests")
+    @PatchMapping("/requests")
     public ResponseEntity<GlobalApiResponse<?>> sendHeartOrRejectToReceiver(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody MatchingRequestDto requestDto
@@ -107,7 +107,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없습니다."),
             @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 최종 확정을 할 수 없습니다.")
     })
-    @PostMapping("/api/matching/requests/confirm")
+    @PostMapping("/requests/confirm")
     public ResponseEntity<GlobalApiResponse<?>> sendConfirm(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody MatchConfirmRequestDto requestDto

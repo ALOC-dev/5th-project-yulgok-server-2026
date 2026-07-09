@@ -36,6 +36,7 @@ public enum ErrorCode {
     SURVEY_NOT_FOUND(HttpStatus.NOT_FOUND, "설문 내역을 찾을 수 없습니다."),
     MATCH_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "매칭 요청을 찾을 수 없습니다."),
     CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
+    MATCH_CANDIDATE_NOT_FOUND(HttpStatus.NOT_FOUND, "추천 가능한 매칭 상대가 없습니다."),
 
     // ── 409 ──
     DETAILS_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 필수 정보가 등록된 상태입니다."),

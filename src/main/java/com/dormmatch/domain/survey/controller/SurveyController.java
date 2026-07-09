@@ -13,15 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-@RestController("/api/surveys")
+@RestController
+@RequestMapping("/api/surveys")
 public class SurveyController {
 
-    private SurveyService surveyService;
+    private final SurveyService surveyService;
 
     @Autowired
     public SurveyController(SurveyService surveyService){
@@ -36,7 +34,7 @@ public class SurveyController {
             @ApiResponse(responseCode = "404", description = "유저를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "409", description = "이미 설문을 제출한 상태입니다.")
     })
-    @PostMapping("/api/surveys")
+    @PostMapping
     @RequiresAuth
     public ResponseEntity<GlobalApiResponse<?>> saveUserPreferences(
             @AuthenticationPrincipal Long userId,
@@ -59,7 +57,7 @@ public class SurveyController {
             @ApiResponse(responseCode = "403", description = "설문 작성이 필요합니다."),
             @ApiResponse(responseCode = "404", description = "설문 내역을 찾을 수 없습니다.")
     })
-    @GetMapping("/api/surveys/me")
+    @GetMapping("/me")
     @RequiresAuth
     @RequiresSurvey
     public ResponseEntity<GlobalApiResponse<?>> getUserPreferences(

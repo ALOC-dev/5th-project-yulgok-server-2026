@@ -17,8 +17,8 @@ import java.util.List;
 public class UserPreferencesRequestDto {
 
     @NotNull(message = "smokingStatus는 필수입니다.")
-    @Min(value = 1, message = "smokingStatus는 1 이상이어야 합니다.")
-    @Max(value = 2, message = "smokingStatus는 2 이하여야 합니다.")
+    @Min(value = 0, message = "smokingStatus는 0(비흡연) 또는 1(흡연)이어야 합니다.")
+    @Max(value = 1, message = "smokingStatus는 0(비흡연) 또는 1(흡연)이어야 합니다.")
     private Integer smokingStatus;
 
     @Size(max = 500, message = "introduce는 500자 이하여야 합니다.")
