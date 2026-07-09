@@ -36,8 +36,8 @@ public class UserDetailsService {
      * @Transactional: 값의 수정/생성이 일어나므로, 도중에 에러가 나면 전부 취소되도록 안전장치를 켭니다.
      */
     @Transactional
-    public UserDetailsResponseDto createDetails(String userId, UserDetailsRequestDto request) {
-        Long userPk = Long.valueOf(userId);
+    public UserDetailsResponseDto createDetails(Long userId, UserDetailsRequestDto request) {
+        Long userPk = userId;
         // 이미 상세 정보가 등록된 유저인지 검사합니다.
         if (userDetailsRepository.existsById(userPk)) {
             // 이미 존재한다면 예외(409 Conflict)를 발생시킵니다.
@@ -67,8 +67,8 @@ public class UserDetailsService {
     /**
      * 유저 본인의 통합 프로필 정보를 조회합니다
      */
-    public UserProfileResponseDto getProfile(String userId) {
-        Long userPk = Long.valueOf(userId);
+    public UserProfileResponseDto getProfile(Long userId) {
+        Long userPk = userId;
         // 1. 기본 유저 정보(이메일, 닉네임 등)를 DB에서 찾습니다.
         Users user = usersRepository.findById(userPk)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -94,8 +94,8 @@ public class UserDetailsService {
      * @Transactional: DB 내 데이터의 실제 변경(Update)이 일어나므로 트랜잭션을 켭니다.
      */
     @Transactional
-    public UserProfileUpdateResponseDto updateProfile(String userId, UserProfileUpdateRequestDto request) {
-        Long userPk = Long.valueOf(userId);
+    public UserProfileUpdateResponseDto updateProfile(Long userId, UserProfileUpdateRequestDto request) {
+        Long userPk = userId;
         // 1. 수정할 유저를 DB에서 찾습니다.
         Users user = usersRepository.findById(userPk)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
