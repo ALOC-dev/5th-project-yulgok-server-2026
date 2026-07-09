@@ -4,7 +4,9 @@ import com.dormmatch.domain.auth.dto.AuthStatusResponseDto;
 import com.dormmatch.domain.auth.dto.LoginResponseDto;
 import com.dormmatch.domain.auth.dto.RefreshTokenResponseDto;
 import com.dormmatch.domain.auth.service.AuthService;
-import com.dormmatch.global.response.ApiResponse;
+import com.dormmatch.global.exception.BusinessException;
+import com.dormmatch.global.exception.ErrorCode;
+import com.dormmatch.global.response.GlobalApiResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,14 +35,13 @@ public class AuthController {
      * 그 티켓을 받아 실제 회원가입/로그인 처리를 완료하고 토큰을 발급하는 핵심 API입니다.
      */
     @GetMapping("/kakao/callback")
-    public ResponseEntity<ApiResponse<LoginResponseDto>> kakaoCallback(
+    public ResponseEntity<GlobalApiResponse<?>> kakaoCallback(
             @RequestParam(value = "code", required = false) String code, // 카카오가 보내준 인가 코드
             HttpServletResponse servletResponse
     ) {
         // 만약 카카오가 코드를 안 보냈거나 비어있다면 잘못된 요청시 에러를 반환합니다.
         if (code == null || code.isBlank()) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "인가 코드가 필요합니다."));
+            throw new BusinessException(ErrorCode.BAD_REQUEST,"인가 코드가 필요합니다.");
         }
 
         // 1. [비즈니스 로직 호출]: 서비스에게 일회용 코드를 주면서 카카오와 통신하여 회원가입/로그인을 시키고
@@ -61,7 +62,7 @@ public class AuthController {
         servletResponse.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
         // 4. [최종 반환]: 프론트엔드에게 Access Token과 유저 간략 정보가 담긴 데이터를 규격 상자에 담아 반환합니다.
-        return ResponseEntity.ok(ApiResponse.success(loginResult.response()));
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "Access Token 반환 성공", loginResult.response()));
     }
 
     /**
@@ -70,7 +71,7 @@ public class AuthController {
      * Refresh Token을 꺼내어 검증한 뒤 새로운 Access Token을 갱신(재발급)해 줍니다.
      */
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<RefreshTokenResponseDto>> refresh(
+    public ResponseEntity<GlobalApiResponse<RefreshTokenResponseDto>> refresh(
             @RequestParam(value = "refreshToken", required = false) String refreshToken, // URL 파라미터로 들어올 경우를 대비
             HttpServletRequest request
     ) {
@@ -80,8 +81,7 @@ public class AuthController {
         }
         // 쿠키에도 리프레시 토큰이 전혀 없다면 인증 실패(41) 에러를 뱉습니다.
         if (refreshToken == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error(HttpStatus.UNAUTHORIZED, "Refresh Token이 필요합니다."));
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Refresh Token이 필요합니다.");
         }
 
         // 서비스에게 리프레시 토큰을 주며 새 엑세스 토큰을 받아옵니다.
@@ -89,12 +89,11 @@ public class AuthController {
 
         // 만약 리프레시 토큰마저 만료되었거나 썩은 토큰이라면 다시 로그인하라고 에러(401)를 던집니다.
         if (response == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error(HttpStatus.UNAUTHORIZED, "Refresh Token이 만료되었거나 유효하지 않습니다."));
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "Refresh Token이 만료되었거나 유효하지 않습니다.");
         }
 
         // 정상적으로 새 Access Token이 나왔다면 프론트엔드에게 돌려줌
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "새 Access Toekn 발급 성공", response));
     }
 
     /**
@@ -102,7 +101,7 @@ public class AuthController {
      * 역할: 로그아웃 요청 시, 브라우저에 저장되어 있던 HttpOnly 쿠키(Refresh Token)를 강제로 만료시켜 무효화합니다.
      */
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
+    public ResponseEntity<GlobalApiResponse<Void>> logout(HttpServletResponse response) {
         // 똑같은 이름의 쿠키를 만들되, 만료시간(maxAge)을 0으로 주어 브라우저가 즉시 삭제하게 만듭니다.
         ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
@@ -113,13 +112,13 @@ public class AuthController {
                 .build();
 
         response.addHeader("Set-Cookie", clearCookie.toString());
-        return ResponseEntity.ok(ApiResponse.successMessage("로그아웃되었습니다."));
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"로그아웃되었습니다.", null));
     }
 
     @GetMapping("/status")
-    public ResponseEntity<ApiResponse<AuthStatusResponseDto>> status() {
+    public ResponseEntity<GlobalApiResponse<AuthStatusResponseDto>> status() {
         AuthStatusResponseDto response = authService.getCurrentUserStatus();
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"유저 정보 반환 성공", response));
     }
 
     //사용자의 HTTP 요청 속 refresh토큰만 추출

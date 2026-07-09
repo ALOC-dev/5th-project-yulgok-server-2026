@@ -6,14 +6,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: dormmatch-test
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: dormmatch
+      POSTGRES_USER: dormmatch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d dormmatch-test"]
+      test: ["CMD-SHELL", "pg_isready -U dormmatch -d dormmatch"]
       interval: 10s
       timeout: 5s
       retries: 5

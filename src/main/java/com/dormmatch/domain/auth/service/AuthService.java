@@ -12,8 +12,10 @@ import com.dormmatch.global.config.KakaoProperties;
 import com.dormmatch.global.exception.BusinessException;
 import com.dormmatch.global.exception.ErrorCode;
 import com.dormmatch.global.jwt.JwtTokenProvider;
+import com.dormmatch.global.util.HashIdsUtils;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -31,6 +33,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Optional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AuthService {
@@ -66,7 +69,7 @@ public class AuthService {
                 .refreshToken(refreshToken)
                 .isNewUser(userRegistration.isNewUser())
                 .user(LoginResponseDto.UserInfo.builder()
-                        .id(user.getId())
+                        .id(HashIdsUtils.encode(user.getId()))
                         .nickname(user.getNickname())
                         .role(user.getRole())
                         .status(user.getStatus())
@@ -132,7 +135,7 @@ public class AuthService {
         return AuthStatusResponseDto.builder()
                 .authenticated(true)
                 .user(AuthStatusResponseDto.UserInfo.builder()
-                        .id(user.getId())
+                        .id(HashIdsUtils.encode(user.getId()))
                         .nickname(user.getNickname())
                         .role(user.getRole())
                         .status(user.getStatus())
@@ -175,7 +178,9 @@ public class AuthService {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("client_id", kakaoProperties.getClientId());
-        params.add("client_secret", kakaoProperties.getClientSecret());
+        if (kakaoProperties.getClientSecret() != null && !kakaoProperties.getClientSecret().isBlank()) {
+            params.add("client_secret", kakaoProperties.getClientSecret());
+        }
         params.add("redirect_uri", kakaoProperties.getRedirectUri());
         params.add("code", code);
 
@@ -189,8 +194,13 @@ public class AuthService {
             }
             return response;
         } catch (HttpClientErrorException.BadRequest e) {
+            log.warn("Kakao token request failed. status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
             throw new BusinessException(ErrorCode.INVALID_INPUT);
+        } catch (HttpClientErrorException e) {
+            log.warn("Kakao token request failed. status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
         } catch (RestClientException e) {
+            log.warn("Kakao token request failed.", e);
             throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
         }
     }
@@ -220,7 +230,11 @@ public class AuthService {
                 throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
             }
             return response;
+        } catch (HttpClientErrorException e) {
+            log.warn("Kakao user info request failed. status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
         } catch (RestClientException e) {
+            log.warn("Kakao user info request failed.", e);
             throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
         }
     }

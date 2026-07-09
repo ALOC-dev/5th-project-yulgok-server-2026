@@ -36,15 +36,16 @@ public class ValidationAspect {
     // @RequiresSurvey를 메서드 앞에 붙여서 사용
     @Before("@annotation(com.dormmatch.global.aop.RequiresSurvey)")
     public void checkSurveyCompleted(JoinPoint joinPoint){
-        String userId = extractUserId(joinPoint);
+        Long userId = extractUserId(joinPoint);
 
-        Boolean surveyCompleted = userPreferencesRepository
-                .findByUserId(Long.valueOf(userId))
-                .orElseThrow(()->new BusinessException(ErrorCode.SURVEY_NOT_FOUND))
-                .getIsCompleted();
+        boolean surveyCompleted = userPreferencesRepository
+                .findByUserId(userId)
+                .map(UserPreferences::getIsCompleted)
+                .orElse(false);
 
-        if(surveyCompleted == false)
-            throw new BusinessException(ErrorCode.SURVEY_NOT_FOUND);
+        if (!surveyCompleted) {
+            throw new BusinessException(ErrorCode.SURVEY_REQUIRED);
+        }
     }
 
 
@@ -59,12 +60,12 @@ public class ValidationAspect {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
-        String userId = authentication.getPrincipal().toString();
+        Long userId = (Long) authentication.getPrincipal();
 
         log.debug("[AuthAspect] userId: {}, method: {}",
                 userId, joinPoint.getSignature().getName());
 
-        Users user = usersRepository.findById(Long.valueOf(userId))
+        Users user = usersRepository.findById(userId)
                 .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         AuthRole[] authRole = requiresAuth.roles();
@@ -86,18 +87,18 @@ public class ValidationAspect {
     // @RequiresCertification
     @Before("@annotation(com.dormmatch.global.aop.RequiresCertification)")
     public void checkCertification(JoinPoint joinPoint){
-        String userId = extractUserId(joinPoint);
+        Long userId = extractUserId(joinPoint);
 
 
     }
 
     // 매개변수로 들어오는 userId 확인
-    public static String extractUserId(JoinPoint joinPoint){
+    public static Long extractUserId(JoinPoint joinPoint){
         for(Object args : joinPoint.getArgs()) {
-            if (args instanceof String) {
-                return (String) args;
+            if (args instanceof Long) {
+                return (Long) args;
             }
         }
-        throw new IllegalStateException("userId를 찾을 수 없습니다.");
+        throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
 }

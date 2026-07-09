@@ -11,6 +11,7 @@ import com.dormmatch.domain.user.repository.UserDetailsRepository;
 import com.dormmatch.domain.user.repository.UsersRepository;
 import com.dormmatch.global.exception.BusinessException;
 import com.dormmatch.global.exception.ErrorCode;
+import com.dormmatch.global.util.HashIdsUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,7 +79,7 @@ public class UserDetailsService {
 
         // 3. 두 테이블에서 긁어온 정보를 (UserProfileResponseDto)에 합쳐서 담아 반환합니다.
         return UserProfileResponseDto.builder()
-                .id(user.getId())
+                .id(HashIdsUtils.encode(user.getId()))
                 .nickname(user.getNickname())
                 .email(user.getEmail())
                 .profileImageUrl(user.getProfileImageUrl())
@@ -105,7 +106,7 @@ public class UserDetailsService {
 
         // 3. 수정 완료된 결과를 가방에 담아 돌려줍니다.
         return UserProfileUpdateResponseDto.builder()
-                .id(user.getId())
+                .id(HashIdsUtils.encode(user.getId()))
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
                 .build();
@@ -118,7 +119,7 @@ public class UserDetailsService {
      */
     private UserDetailsResponseDto toResponse(UserDetails userDetails) {
         return UserDetailsResponseDto.builder()
-                .userId(userDetails.getUserId().toString())
+                .userId(HashIdsUtils.encode(userDetails.getUserId()))
                 .realName(userDetails.getRealName())
                 .studentId(userDetails.getStudentId())
                 .age(userDetails.getAge())

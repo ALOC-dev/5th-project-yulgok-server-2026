@@ -26,10 +26,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	implementation 'com.github.f4b6a3:ulid-creator:5.2.3'
+	implementation 'org.hashids:hashids:1.0.3'
 
     // DB
 	implementation 'com.pgvector:pgvector:0.1.6'
 	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.hibernate.orm:hibernate-vector:6.6.42.Final'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

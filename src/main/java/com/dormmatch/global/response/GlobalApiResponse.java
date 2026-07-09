@@ -20,6 +20,7 @@ public class GlobalApiResponse<T> {
     private final String message;
     private final T data;
     private final List<ErrorResponse> errors;
+    private final Integer size;
 
     public static <T> GlobalApiResponse<T> success(HttpStatus status, String message, T data){
         return GlobalApiResponse.<T>builder()
@@ -27,6 +28,16 @@ public class GlobalApiResponse<T> {
                 .code(status.name())
                 .message(message)
                 .data(data)
+                .build();
+    }
+
+    public static <T> GlobalApiResponse<T> multiSuccess(HttpStatus status, String message, T data, int size){
+        return GlobalApiResponse.<T>builder()
+                .status(status.value())
+                .code(status.name())
+                .message(message)
+                .data(data)
+                .size(size)
                 .build();
     }
 

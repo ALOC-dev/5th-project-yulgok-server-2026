@@ -6,7 +6,7 @@ import com.dormmatch.domain.user.dto.UserProfileResponseDto;
 import com.dormmatch.domain.user.dto.UserProfileUpdateRequestDto;
 import com.dormmatch.domain.user.dto.UserProfileUpdateResponseDto;
 import com.dormmatch.domain.user.service.UserDetailsService;
-import com.dormmatch.global.response.ApiResponse;
+import com.dormmatch.global.response.GlobalApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,14 +32,14 @@ public class UserDetailsController {
      * 저장해둔 유저의 PK 값(userId)을 안전하게 꺼내와 매개변수에 주입해줍니다.
      */
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserProfileResponseDto>> getProfile(
+    public ResponseEntity<GlobalApiResponse<UserProfileResponseDto>> getProfile(
             @AuthenticationPrincipal String userId
     ) {
         // 1. 서비스에 유저 ID를 넘겨 프로필 데이터를 조회합니다.
         UserProfileResponseDto response = userDetailsService.getProfile(userId);
 
         // 2. 성공 응답 포맷(ApiResponse.success)에 담아 HTTP 상태코드 200(OK)으로 반환합니다.
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"응답 성공", response));
     }
 
     /**
@@ -48,7 +48,7 @@ public class UserDetailsController {
      * @RequestBody: 클라이언트가 보낸 JSON 데이터를 자바 객체(Dto)로 변환해줍니다
      */
     @PatchMapping("/me")
-    public ResponseEntity<ApiResponse<UserProfileUpdateResponseDto>> updateProfile(
+    public ResponseEntity<GlobalApiResponse<UserProfileUpdateResponseDto>> updateProfile(
             @AuthenticationPrincipal String userId,
             @Valid @RequestBody UserProfileUpdateRequestDto request
     ) {
@@ -56,7 +56,7 @@ public class UserDetailsController {
         UserProfileUpdateResponseDto response = userDetailsService.updateProfile(userId, request);
 
         // 2. 수정 완료 메시지와 함께 가공된 결과 데이터를 반환합니다.
-        return ResponseEntity.ok(ApiResponse.successMessage("프로필이 수정되었습니다.", response));
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "프로필이 수정되었습니다.", response));
     }
 
     /**
@@ -64,7 +64,7 @@ public class UserDetailsController {
      * 역할: 카카오 로그인 직후, 서비스 이용에 필요한 추가 필수 정보(본명, 학번, 나이, 성별, 학과)를 최초 등록합니다.
      */
     @PostMapping("/details")
-    public ResponseEntity<ApiResponse<UserDetailsResponseDto>> createDetails(
+    public ResponseEntity<GlobalApiResponse<UserDetailsResponseDto>> createDetails(
             @AuthenticationPrincipal String userId,
             @Valid @RequestBody UserDetailsRequestDto request
     ) {
@@ -73,6 +73,6 @@ public class UserDetailsController {
 
         // 2. 새로운 데이터가 생성되었으므로 HTTP 상태코드 201(CREATED)을 지정하여 반환합니다.
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(HttpStatus.CREATED, "필수 정보가 등록되었습니다.", response));
+                .body(GlobalApiResponse.success(HttpStatus.CREATED, "필수 정보가 등록되었습니다.", response));
     }
 }

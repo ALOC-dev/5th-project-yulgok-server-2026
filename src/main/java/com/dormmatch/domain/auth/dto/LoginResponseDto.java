@@ -21,7 +21,7 @@ public class LoginResponseDto {
     @Getter
     @Builder
     public static class UserInfo {
-        private final Long id;
+        private final String id;
         private final String nickname;
         private final String role;
         private final String status;

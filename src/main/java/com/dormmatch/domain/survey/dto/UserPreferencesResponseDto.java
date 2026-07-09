@@ -1,11 +1,13 @@
 package com.dormmatch.domain.survey.dto;
 
+import com.dormmatch.domain.survey.entity.SurveyAnswerField;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -15,10 +17,10 @@ public class UserPreferencesResponseDto {
 
     private String userId;
     private Boolean isCompleted;
-    private Boolean isLocked;
     private Integer smokingStatus;
     private String introduce;
     private SurveyAnswers answers;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<SurveyAnswerField> visibleProfileFields;
 }

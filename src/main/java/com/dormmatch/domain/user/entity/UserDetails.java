@@ -14,6 +14,7 @@ public class UserDetails {
 
     @Id
     @Column(name = "user_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
     @OneToOne(fetch = FetchType.LAZY)
