@@ -11,6 +11,7 @@ public class UserPreferencesDtoMapper {
                 .smokingStatus(requestDto.getSmokingStatus())
                 .introduce(requestDto.getIntroduce())
                 .answers(requestDto.getAnswers())
+                .visibleProfileFields(requestDto.getVisibleProfileFields())
                 .build();
     }
 
@@ -18,12 +19,12 @@ public class UserPreferencesDtoMapper {
         return UserPreferencesResponseDto.builder()
                 .userId(userPreferences.getUserId())
                 .isCompleted(userPreferences.getIsCompleted())
-                .isLocked(false)
                 .smokingStatus(userPreferences.getSmokingStatus())
                 .introduce(userPreferences.getIntroduce())
                 .answers(userPreferences.getAnswers())
                 .createdAt(userPreferences.getCreatedAt())
                 .updatedAt(userPreferences.getUpdatedAt())
+                .visibleProfileFields(userPreferences.getVisibleProfileFields())
                 .build();
     }
 

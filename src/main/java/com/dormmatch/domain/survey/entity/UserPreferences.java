@@ -4,12 +4,13 @@ import com.dormmatch.domain.survey.dto.SurveyAnswers;
 import com.dormmatch.domain.user.entity.Users;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Array;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -36,19 +37,28 @@ public class UserPreferences {
     @Column(columnDefinition = "TEXT")
     private String introduce;
 
+    // 여러 설문
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "answers", columnDefinition = "jsonb", nullable = false)
-    private SurveyAnswers answers = new SurveyAnswers();
+    private SurveyAnswers answers;
+
+    // 사용자 개인화 항목(보고 싶은 3가지 항목)
+    @Builder.Default
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "visible_profile_fields", columnDefinition = "jsonb")
+    private List<SurveyAnswerField> visibleProfileFields = new ArrayList<>();
 
     // 정규화 벡터
     @Builder.Default
+    @Array(length = 9)
+    @JdbcTypeCode(SqlTypes.VECTOR)
     @Column(name = "lifestyle_vector", columnDefinition = "vector(9)")
-    private double[] lifestyleVector = new double[9];
+    private float[] lifestyleVector = new float[9];
 
-    @PrePersist
     @PreUpdate
-    public void onCreateOrUpdate() {
+    public void onUpdate() {
         convertToNormalizedVector();
+        this.updatedAt = LocalDateTime.now();
     }
 
     private void convertToNormalizedVector() {
@@ -57,37 +67,59 @@ public class UserPreferences {
         this.lifestyleVector[2] = normalize(this.answers.getSleepTalking(), 1, 5);
         this.lifestyleVector[3] = normalize(this.answers.getOrganizingStyle(), 1, 5);
         this.lifestyleVector[4] = normalize(this.answers.getTemperaturePreference(), 1, 3);
-        this.lifestyleVector[5] = normalize(this.answers.getShowerFrequency(), 1 ,5);
-        this.lifestyleVector[6] = normalize(this.answers.getSpeakerStyle(), 1, 5);
-        this.lifestyleVector[7] = normalize(this.answers.getCallInRoom(), 1, 5);
+        this.lifestyleVector[5] = normalize(this.answers.getShowerFrequency(), 1 ,4);
+        this.lifestyleVector[6] = normalize(this.answers.getSpeakerStyle(), 1, 3);
+        this.lifestyleVector[7] = normalize(this.answers.getCallInRoom(), 1, 3);
         this.lifestyleVector[8] = normalize(this.answers.getEatingInRoom(), 1, 3);
     }
 
     // 벡터 정규화
-    private double normalize(Integer value, int min, int max){
+    private float normalize(Integer value, int min, int max){
 
-        if(value == null)   return 0.0;
+        if(value == null)   return 0.0f;
 
-        if(max == min)  return 0.0;
+        if(max == min)  return 0.0f;
 
         if(value < min) value = min;
         if(value > max) value = max;
 
-        return ((double) value - min)/((double) max - min);
+        return ((float) value - min)/((float) max - min);
     }
 
 
     // 메타
 
+    // 설문 완료 여부
+    @Builder.Default
     @Column(name = "is_completed", nullable = false)
     private Boolean isCompleted = false;
 
-    @CreationTimestamp
+
+    // 매칭 성공 여부
+    @Builder.Default
+    @Column(name = "is_matched", nullable = false)
+    private Boolean isMatched = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "rerolled_at")
+    private LocalDateTime rerolledAt;
+
+    @PrePersist
+    public void onCreate() {
+        convertToNormalizedVector();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateIsRerolled() {this.rerolledAt = LocalDateTime.now();}
+
+    public void updateIsMatched() {
+        this.isMatched = true;
+    }
 
 }

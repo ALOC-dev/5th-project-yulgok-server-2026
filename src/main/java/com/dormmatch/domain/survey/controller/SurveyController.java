@@ -13,15 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-@RestController("/api/surveys")
+@RestController
+@RequestMapping("/api/surveys")
 public class SurveyController {
 
-    private SurveyService surveyService;
+    private final SurveyService surveyService;
 
     @Autowired
     public SurveyController(SurveyService surveyService){
@@ -32,11 +30,11 @@ public class SurveyController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "설문 제출 성공"),
             @ApiResponse(responseCode = "400", description = "필수 항목 누락 / 값 범위 초과"),
-            @ApiResponse(responseCode = "401", description = "인증 토큰 없음"),
-            @ApiResponse(responseCode = "403", description = "기숙사 인증 미완료"),
-            @ApiResponse(responseCode = "409", description = "이미 설문 제출 완료 상태")
+            @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
+            @ApiResponse(responseCode = "404", description = "유저를 찾을 수 없습니다."),
+            @ApiResponse(responseCode = "409", description = "이미 설문을 제출한 상태입니다.")
     })
-    @PostMapping("/api/surveys")
+    @PostMapping
     @RequiresAuth
     public ResponseEntity<GlobalApiResponse<?>> saveUserPreferences(
             @AuthenticationPrincipal Long userId,
@@ -44,18 +42,22 @@ public class SurveyController {
 
         surveyService.saveSurveyStatus(userId, requestDto);
 
-        return ResponseEntity.status(200)
-                .body(GlobalApiResponse.success(HttpStatus.OK,"설문이 제출되었습니다. 매칭 대기 상태로 전환됩니다.", null));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(GlobalApiResponse.success(
+                        HttpStatus.CREATED,
+                        "설문이 제출되었습니다. 매칭 대기 상태로 전환됩니다.",
+                        null
+                ));
     }
 
 
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "설문 내용 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 토큰 없음"),
-            @ApiResponse(responseCode = "403", description = "기숙사 인증 미완료"),
-            @ApiResponse(responseCode = "404", description = "설문 제출 내역 없음"),
+            @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
+            @ApiResponse(responseCode = "403", description = "설문 작성이 필요합니다."),
+            @ApiResponse(responseCode = "404", description = "설문 내역을 찾을 수 없습니다.")
     })
-    @GetMapping("/api/surveys/me")
+    @GetMapping("/me")
     @RequiresAuth
     @RequiresSurvey
     public ResponseEntity<GlobalApiResponse<?>> getUserPreferences(

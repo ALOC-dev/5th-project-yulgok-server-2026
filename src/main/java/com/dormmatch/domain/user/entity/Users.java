@@ -1,9 +1,12 @@
 package com.dormmatch.domain.user.entity;
 
+import com.dormmatch.domain.survey.entity.UserPreferences;
+import com.github.f4b6a3.ulid.UlidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -39,6 +42,10 @@ public class Users {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserDetails userDetails;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserPreferences userPreferences;
+
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -56,9 +63,21 @@ public class Users {
         this.email            = email;
         this.nickname         = nickname;
         this.profileImageUrl  = profileImageUrl;
+        this.role             = "GUEST";
+        this.status           = "PENDING";
     }
 
     public void activate()  { this.status = "ACTIVE"; }
     public void ban()       { this.status = "BANNED"; }
     public void promoteToUser() { this.role = "USER"; }
+
+
+    public void updateProfile(String nickname, String profileImageUrl){
+        if(nickname != null){
+            this.nickname = nickname;
+        }
+        if(profileImageUrl != null){
+            this.profileImageUrl = profileImageUrl;
+        }
+    }
 }
