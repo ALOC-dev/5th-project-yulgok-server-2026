@@ -34,6 +34,13 @@ public class ChatRoom {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    public static ChatRoom create(Long matchRequestId) {
+        ChatRoom chatRoom = new ChatRoom();
+        chatRoom.matchRequestId = matchRequestId;
+        chatRoom.status = ChatRoomStatus.OPEN;
+        return chatRoom;
+    }
+    
     public void selectBySender() {
         this.senderSelected = true;
     }

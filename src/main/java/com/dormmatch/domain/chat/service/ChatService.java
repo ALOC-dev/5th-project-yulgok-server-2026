@@ -143,4 +143,9 @@ public class ChatService {
             throw new BusinessException(ErrorCode.CHAT_MESSAGE_TOO_LONG);
         }
     }
+    @Transactional
+    public ChatRoom createChatRoomIfNotExists(Long matchRequestId) {
+        return chatRoomRepository.findByMatchRequestId(matchRequestId)
+                .orElseGet(() -> chatRoomRepository.save(ChatRoom.create(matchRequestId)));
+    }
 }

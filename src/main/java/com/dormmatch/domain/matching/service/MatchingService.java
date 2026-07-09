@@ -1,5 +1,6 @@
 package com.dormmatch.domain.matching.service;
 
+import com.dormmatch.domain.chat.service.ChatService;
 import com.dormmatch.domain.matching.dto.MatchingResponseDto;
 import com.dormmatch.domain.matching.dto.PreferredAnswerDto;
 import com.dormmatch.domain.matching.entity.MatchRequests;
@@ -33,12 +34,17 @@ public class MatchingService {
     private final MatchRepository matchRepository;
     private final UserPreferencesRepository userPreferencesRepository;
     private final UsersRepository usersRepository;
+    private final ChatService chatService;
 
     @Autowired
-    public MatchingService(MatchRepository matchRepository, UserPreferencesRepository userPreferencesRepository, UsersRepository usersRepository){
+    public MatchingService(MatchRepository matchRepository,
+                           UserPreferencesRepository userPreferencesRepository,
+                           UsersRepository usersRepository,
+                           ChatService chatService){
         this.matchRepository = matchRepository;
         this.userPreferencesRepository = userPreferencesRepository;
         this.usersRepository = usersRepository;
+        this.chatService = chatService;
     }
 
 
@@ -98,8 +104,12 @@ public class MatchingService {
                 || (myStatus.equals(MatchStatus.NONE) && otherStatus.equals(MatchStatus.HEART))
         ){
             myMatchRequest.updateStatusOf(userId, MatchStatus.HEART);
+            if(myMatchRequest.isHeartMatched()) {
+                chatService.createChatRoomIfNotExists(myMatchRequest.getId());
+            }
             return;
         }
+
 
         throw new BusinessException(ErrorCode.NOT_HEARTABLE_STATUS);
 
