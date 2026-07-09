@@ -33,8 +33,7 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public ChatRoomsResponseDto getChatRooms(Long userId) {
-        // TODO: MatchRequest 도메인 연결 후 현재 유저가 참여한 채팅방만 조회하도록 수정
-        List<ChatRoomResponseDto> rooms = chatRoomRepository.findAll()
+        List<ChatRoomResponseDto> rooms = chatRoomRepository.findAllByParticipantId(userId)
                 .stream()
                 .map(room -> {
                     ChatMessage lastMessage = chatMessageRepository
@@ -47,7 +46,7 @@ public class ChatService {
                     int unreadCount = chatMessageRepository
                             .countByRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId);
 
-                    // TODO: Users 도메인 연결 후 실제 상대방 이름/프로필 이미지로 교체
+                    // TODO: 유저 도메인 연결 후 실제 상대방 이름/프로필 이미지로 교체
                     return new ChatRoomResponseDto(
                             room.getId(),
                             "상대방",
@@ -66,7 +65,7 @@ public class ChatService {
     public ChatMessagesResponseDto getMessages(Long roomId, Long cursor, int size) {
         validateRoomExists(roomId);
 
-        // size + 1개를 조회해서 다음 페이지 존재 여부를 판단한다.
+        // size + 1개를 조회해서 다음 페이지가 있는지 판단한다.
         PageRequest pageRequest = PageRequest.of(0, size + 1);
 
         List<ChatMessage> messages = cursor == null
@@ -98,8 +97,7 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public ChatUnreadCountResponseDto getTotalUnreadCount(Long userId) {
-        // TODO: 현재 유저가 참여한 채팅방의 안 읽은 메시지만 집계하도록 수정
-        int totalUnreadCount = chatMessageRepository.countBySenderIdNotAndIsReadFalse(userId);
+        int totalUnreadCount = chatMessageRepository.countUnreadByParticipantId(userId);
 
         return new ChatUnreadCountResponseDto(totalUnreadCount);
     }
@@ -113,6 +111,18 @@ public class ChatService {
         ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
 
         return ChatMessageResponseDto.from(savedMessage);
+    }
+
+    @Transactional
+    public ChatRoom createChatRoomIfNotExists(Long matchRequestId) {
+        // 상호 HEART 상태가 되었을 때 matchRequestId 기준으로 채팅방을 한 번만 생성한다.
+        return chatRoomRepository.findByMatchRequestId(matchRequestId)
+                .orElseGet(() -> chatRoomRepository.save(
+                        ChatRoom.builder()
+                                .matchRequestId(matchRequestId)
+                                .status(ChatRoomStatus.OPEN)
+                                .build()
+                ));
     }
 
     private ChatRoom getChatRoom(Long roomId) {
@@ -131,7 +141,7 @@ public class ChatService {
             throw new BusinessException(ErrorCode.CHAT_ROOM_CLOSED);
         }
 
-        // TODO: MatchRequest 도메인 연결 후 senderId가 해당 채팅방 참여자인지 검증
+        // TODO: senderId가 해당 채팅방 참여자인지 검증
         if (senderId == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
@@ -143,15 +153,5 @@ public class ChatService {
         if (message.length() > 500) {
             throw new BusinessException(ErrorCode.CHAT_MESSAGE_TOO_LONG);
         }
-    }
-    @Transactional
-    public ChatRoom createChatRoomIfNotExists(Long matchRequestId) {
-        return chatRoomRepository.findByMatchRequestId(matchRequestId)
-                .orElseGet(() -> chatRoomRepository.save(
-                        ChatRoom.builder()
-                                .matchRequestId(matchRequestId)
-                                .status(ChatRoomStatus.OPEN)
-                                .build()
-                ));
     }
 }

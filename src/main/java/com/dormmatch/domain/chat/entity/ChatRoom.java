@@ -22,6 +22,7 @@ public class ChatRoom {
     @Column(name = "match_request_id", nullable = false, unique = true)
     private Long matchRequestId;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ChatRoomStatus status = ChatRoomStatus.OPEN;
