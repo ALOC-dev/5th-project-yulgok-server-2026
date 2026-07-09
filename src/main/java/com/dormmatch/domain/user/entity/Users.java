@@ -17,9 +17,6 @@ public class Users {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, updatable = false)
-    private String publicId;
-
     @Column(nullable = false, unique = true)
     private String oauthId;
 
@@ -53,9 +50,6 @@ public class Users {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
-        if(this.publicId == null) {
-            this.publicId = UlidCreator.getUlid().toString();
-        }
     }
 
     @PreUpdate
@@ -69,9 +63,21 @@ public class Users {
         this.email            = email;
         this.nickname         = nickname;
         this.profileImageUrl  = profileImageUrl;
+        this.role             = "GUEST";
+        this.status           = "PENDING";
     }
 
     public void activate()  { this.status = "ACTIVE"; }
     public void ban()       { this.status = "BANNED"; }
     public void promoteToUser() { this.role = "USER"; }
+
+
+    public void updateProfile(String nickname, String profileImageUrl){
+        if(nickname != null){
+            this.nickname = nickname;
+        }
+        if(profileImageUrl != null){
+            this.profileImageUrl = profileImageUrl;
+        }
+    }
 }
