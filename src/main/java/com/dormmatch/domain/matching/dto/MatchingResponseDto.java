@@ -15,7 +15,7 @@ import java.util.List;
 public class MatchingResponseDto {
 
     // 외부 공개용 userId;
-    private Long userId;
+    private String userId;
 
     // 학생 이름
     private String name;

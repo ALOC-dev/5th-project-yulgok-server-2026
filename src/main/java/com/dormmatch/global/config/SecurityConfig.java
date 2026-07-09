@@ -47,9 +47,6 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/webjars/**",
-                                "/api/chat/**",
-                                "/ws-stomp/**",
-                                "/test.html",
                                 "/error"                 // 에러 발생 시 리다이렉트되는 경로
                         ).permitAll()
 

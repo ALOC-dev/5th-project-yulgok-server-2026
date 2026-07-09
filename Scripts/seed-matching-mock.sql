@@ -2,8 +2,40 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Make this seed repeatable against local DBs that still have legacy columns.
+-- Repeatable local Swagger seed.
+-- Current API shape:
+-- - Current user comes from Authorization header via @AuthenticationPrincipal Long userId.
+-- - receiverId request fields are external String ids; use the userId returned by GET /api/matching/status.
+-- - This seed uses only the current entity columns. If an older local DB still has legacy NOT NULL
+--   columns, defaults are added below so inserts still work.
 DO $$
+DECLARE
+    preference_int_columns text[] := ARRAY[
+        'activity_time',
+        'alarm_habit',
+        'bed_time',
+        'call_in_room',
+        'cleaning_frequency',
+        'conflict_style',
+        'eating_in_room',
+        'keyboard_style',
+        'light_sensitivity',
+        'organizing_style',
+        'overnight_absence',
+        'roommate_closeness',
+        'scent_sensitivity',
+        'sharing_attitude',
+        'shower_frequency',
+        'sleep_sensitivity',
+        'sleep_talking',
+        'snoring',
+        'speaker_style',
+        'study_location',
+        'teeth_grinding',
+        'temperature_preference',
+        'ventilation_preference'
+    ];
+    col text;
 BEGIN
     IF pg_get_serial_sequence('match_requests', 'match_request_id') IS NULL THEN
         ALTER TABLE match_requests
@@ -29,7 +61,7 @@ BEGIN
           AND column_name = 'receiver_selected'
     ) THEN
         ALTER TABLE chat_rooms
-            DROP COLUMN receiver_selected;
+            ALTER COLUMN receiver_selected SET DEFAULT false;
     END IF;
 
     IF EXISTS (
@@ -40,8 +72,20 @@ BEGIN
           AND column_name = 'sender_selected'
     ) THEN
         ALTER TABLE chat_rooms
-            DROP COLUMN sender_selected;
+            ALTER COLUMN sender_selected SET DEFAULT false;
     END IF;
+
+    FOREACH col IN ARRAY preference_int_columns LOOP
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'user_preferences'
+              AND column_name = col
+        ) THEN
+            EXECUTE format('ALTER TABLE user_preferences ALTER COLUMN %I SET DEFAULT 1', col);
+        END IF;
+    END LOOP;
 
     ALTER TABLE match_requests
         DROP CONSTRAINT IF EXISTS match_requests_user_high_status_check,
@@ -55,29 +99,10 @@ BEGIN
 END
 $$;
 
--- Remove generated state from previous Swagger runs, while keeping base matches 1-8.
-DELETE FROM chat_messages
-WHERE room_id IN (
-    SELECT id
-    FROM chat_rooms
-    WHERE match_request_id IN (
-        SELECT match_request_id
-        FROM match_requests
-        WHERE (user_low_id BETWEEN 10 AND 39 OR user_high_id BETWEEN 10 AND 39)
-           OR match_request_id > 8
-    )
-);
-
-DELETE FROM chat_rooms
-WHERE match_request_id IN (
-    SELECT match_request_id
-    FROM match_requests
-    WHERE (user_low_id BETWEEN 10 AND 39 OR user_high_id BETWEEN 10 AND 39)
-       OR match_request_id > 8
-);
-
+DELETE FROM chat_messages;
+DELETE FROM chat_rooms;
 DELETE FROM match_requests
-WHERE (user_low_id BETWEEN 10 AND 39 OR user_high_id BETWEEN 10 AND 39)
+WHERE (user_low_id BETWEEN 1 AND 39 OR user_high_id BETWEEN 1 AND 39)
    OR match_request_id > 8;
 
 WITH mock_users AS (
@@ -97,7 +122,17 @@ WITH mock_users AS (
         END AS nickname
     FROM generate_series(1, 39) AS gs
 )
-INSERT INTO users (id, oauth_id, email, nickname, profile_image_url, role, status, created_at, updated_at, public_id)
+INSERT INTO users (
+    id,
+    oauth_id,
+    email,
+    nickname,
+    profile_image_url,
+    role,
+    status,
+    created_at,
+    updated_at
+)
 SELECT
     id,
     'mock-kakao-' || id,
@@ -107,8 +142,7 @@ SELECT
     'USER',
     'ACTIVE',
     NOW() - (id || ' days')::interval,
-    NOW(),
-    'test-user-' || id
+    NOW()
 FROM mock_users
 ON CONFLICT (id) DO UPDATE SET
     oauth_id = EXCLUDED.oauth_id,
@@ -117,10 +151,32 @@ ON CONFLICT (id) DO UPDATE SET
     profile_image_url = EXCLUDED.profile_image_url,
     role = EXCLUDED.role,
     status = EXCLUDED.status,
-    updated_at = NOW(),
-    public_id = EXCLUDED.public_id;
+    updated_at = NOW();
 
-INSERT INTO user_details (user_id, real_name, student_id, age, gender, department)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'users'
+          AND column_name = 'public_id'
+    ) THEN
+        UPDATE users
+        SET public_id = 'test-user-' || id
+        WHERE id BETWEEN 1 AND 39;
+    END IF;
+END
+$$;
+
+INSERT INTO user_details (
+    user_id,
+    real_name,
+    student_id,
+    age,
+    gender,
+    department
+)
 SELECT
     gs,
     CASE WHEN gs <= 9 THEN 'Test User ' ELSE 'Mock User ' END || gs,
@@ -138,85 +194,24 @@ ON CONFLICT (user_id) DO UPDATE SET
 
 INSERT INTO user_preferences (
     user_id,
-    activity_time,
-    alarm_habit,
-    bed_time,
-    call_in_room,
-    cleaning_frequency,
-    conflict_style,
-    created_at,
-    eating_in_room,
-    is_completed,
-    keyboard_style,
-    lifestyle_vector,
-    light_sensitivity,
-    organizing_style,
-    overnight_absence,
-    roommate_closeness,
-    scent_sensitivity,
-    sharing_attitude,
-    shower_frequency,
-    sleep_sensitivity,
-    sleep_talking,
     smoking_status,
-    snoring,
-    speaker_style,
-    study_location,
-    teeth_grinding,
-    temperature_preference,
-    updated_at,
-    ventilation_preference,
-    answers,
     introduce,
+    answers,
+    visible_profile_fields,
+    lifestyle_vector,
+    is_completed,
     is_matched,
-    rerolled_at,
-    visible_profile_fields
+    created_at,
+    updated_at,
+    rerolled_at
 )
 SELECT
     gs,
-    1 + (gs % 3),
-    1 + (gs % 3),
-    1 + (gs % 5),
-    1 + (gs % 3),
-    1 + (gs % 4),
-    1 + (gs % 3),
-    NOW() - (gs || ' days')::interval,
-    1 + (gs % 3),
-    true,
-    1 + (gs % 3),
-    CASE
-        WHEN gs = 1 THEN '[0,0,0,0,0,0,0,0,0]'::vector
-        ELSE (
-            '[' ||
-            ((1 + (gs % 5) - 1)::float / 4.0) || ',' ||
-            ((1 + ((gs + 1) % 5) - 1)::float / 4.0) || ',' ||
-            ((1 + ((gs + 2) % 5) - 1)::float / 4.0) || ',' ||
-            ((1 + ((gs + 3) % 5) - 1)::float / 4.0) || ',' ||
-            ((1 + (gs % 3) - 1)::float / 2.0) || ',' ||
-            ((1 + (gs % 4) - 1)::float / 3.0) || ',' ||
-            ((1 + ((gs + 1) % 3) - 1)::float / 2.0) || ',' ||
-            ((1 + ((gs + 2) % 3) - 1)::float / 2.0) || ',' ||
-            ((1 + ((gs + 3) % 3) - 1)::float / 2.0) ||
-            ']'
-        )::vector
-    END,
-    1 + (gs % 3),
-    1 + ((gs + 3) % 5),
-    1 + (gs % 3),
-    1 + (gs % 3),
-    1 + (gs % 3),
-    1 + (gs % 3),
-    1 + (gs % 4),
-    1 + (gs % 3),
-    1 + ((gs + 2) % 5),
     CASE WHEN gs BETWEEN 1 AND 29 THEN 0 ELSE 1 END,
-    1 + ((gs + 1) % 5),
-    1 + ((gs + 1) % 3),
-    1 + (gs % 3),
-    1 + (gs % 5),
-    1 + (gs % 3),
-    NOW(),
-    1 + (gs % 3),
+    CASE
+        WHEN gs <= 9 THEN 'Swagger base matching state #' || gs
+        ELSE 'Swagger mock profile for matching candidate #' || gs
+    END,
     CASE
         WHEN gs = 1 THEN jsonb_build_object(
             'bedtime', 1,
@@ -241,20 +236,35 @@ SELECT
             'eatingInRoom', 1 + ((gs + 3) % 3)
         )
     END,
+    '["BEDTIME", "SNORING", "SHOWER_FREQUENCY", "CALL_IN_ROOM"]'::jsonb,
     CASE
-        WHEN gs <= 9 THEN 'Swagger base matching state #' || gs
-        ELSE 'Swagger mock profile for matching candidate #' || gs
+        WHEN gs = 1 THEN '[0,0,0,0,0,0,0,0,0]'::vector
+        ELSE (
+            '[' ||
+            ((1 + (gs % 5) - 1)::float / 4.0) || ',' ||
+            ((1 + ((gs + 1) % 5) - 1)::float / 4.0) || ',' ||
+            ((1 + ((gs + 2) % 5) - 1)::float / 4.0) || ',' ||
+            ((1 + ((gs + 3) % 5) - 1)::float / 4.0) || ',' ||
+            ((1 + (gs % 3) - 1)::float / 2.0) || ',' ||
+            ((1 + (gs % 4) - 1)::float / 3.0) || ',' ||
+            ((1 + ((gs + 1) % 3) - 1)::float / 2.0) || ',' ||
+            ((1 + ((gs + 2) % 3) - 1)::float / 2.0) || ',' ||
+            ((1 + ((gs + 3) % 3) - 1)::float / 2.0) ||
+            ']'
+        )::vector
     END,
+    true,
     false,
-    NOW() - INTERVAL '1 day',
-    '["BEDTIME", "SNORING", "SHOWER_FREQUENCY", "CALL_IN_ROOM"]'::jsonb
+    NOW() - (gs || ' days')::interval,
+    NOW(),
+    NOW() - INTERVAL '1 day'
 FROM generate_series(1, 39) AS gs
 ON CONFLICT (user_id) DO UPDATE SET
     smoking_status = EXCLUDED.smoking_status,
+    introduce = EXCLUDED.introduce,
     answers = EXCLUDED.answers,
     visible_profile_fields = EXCLUDED.visible_profile_fields,
     lifestyle_vector = EXCLUDED.lifestyle_vector,
-    introduce = EXCLUDED.introduce,
     is_completed = true,
     is_matched = false,
     rerolled_at = NOW() - INTERVAL '1 day',
@@ -274,14 +284,14 @@ INSERT INTO match_requests (
     user_high_recommended_at
 )
 VALUES
-    (1, NOW() - INTERVAL '5 days', 91.1, 'RECOMMENDED', 'NONE',            1, 2, 1, 2, NOW() - INTERVAL '5 days', NULL),
-    (2, NOW() - INTERVAL '5 days', 88.2, 'HEART',       'RECOMMENDED',     1, 3, 1, 3, NULL, NOW() - INTERVAL '5 days'),
-    (3, NOW() - INTERVAL '5 days', 86.3, 'RECOMMENDED', 'HEART',           1, 4, 1, 4, NOW() - INTERVAL '5 days', NULL),
-    (4, NOW() - INTERVAL '5 days', 84.4, 'HEART',       'HEART',           1, 5, 1, 5, NULL, NULL),
-    (5, NOW() - INTERVAL '5 days', 82.5, 'RECOMMENDED', 'REJECTED',        1, 6, 1, 6, NOW() - INTERVAL '5 days', NULL),
-    (6, NOW() - INTERVAL '5 days', 80.6, 'FINAL_CONFIRMED', 'HEART',       1, 7, 1, 7, NULL, NULL),
+    (1, NOW() - INTERVAL '5 days', 91.1, 'RECOMMENDED',     'NONE',            1, 2, 1, 2, NOW() - INTERVAL '5 days', NULL),
+    (2, NOW() - INTERVAL '5 days', 88.2, 'HEART',           'RECOMMENDED',     1, 3, 1, 3, NULL, NOW() - INTERVAL '5 days'),
+    (3, NOW() - INTERVAL '5 days', 86.3, 'RECOMMENDED',     'HEART',           1, 4, 1, 4, NOW() - INTERVAL '5 days', NULL),
+    (4, NOW() - INTERVAL '5 days', 84.4, 'HEART',           'HEART',           1, 5, 1, 5, NULL, NULL),
+    (5, NOW() - INTERVAL '5 days', 82.5, 'RECOMMENDED',     'REJECTED',        1, 6, 1, 6, NOW() - INTERVAL '5 days', NULL),
+    (6, NOW() - INTERVAL '5 days', 80.6, 'FINAL_CONFIRMED', 'HEART',           1, 7, 1, 7, NULL, NULL),
     (7, NOW() - INTERVAL '5 days', 78.7, 'FINAL_CONFIRMED', 'FINAL_CONFIRMED', 1, 8, 1, 8, NULL, NULL),
-    (8, NOW() - INTERVAL '5 days', 76.8, 'REJECTED',    'RECOMMENDED',     1, 9, 1, 9, NULL, NOW() - INTERVAL '5 days')
+    (8, NOW() - INTERVAL '5 days', 76.8, 'REJECTED',        'RECOMMENDED',     1, 9, 1, 9, NULL, NOW() - INTERVAL '5 days')
 ON CONFLICT (match_request_id) DO UPDATE SET
     created_at = EXCLUDED.created_at,
     match_percentage = EXCLUDED.match_percentage,

@@ -12,6 +12,7 @@ import com.dormmatch.domain.user.entity.Users;
 import com.dormmatch.domain.user.repository.UsersRepository;
 import com.dormmatch.global.exception.BusinessException;
 import com.dormmatch.global.exception.ErrorCode;
+import com.dormmatch.global.util.HashIdsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -172,7 +173,7 @@ public class MatchingService {
                     : matchRequest.getUserHighRecommendedAt();
 
             MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
-                    .userId(other.getId())
+                    .userId(HashIdsUtils.encode(other.getId()))
                     .name(other.getNickname())
                     .gender(other.getUserDetails().getGender())
                     .age(other.getUserDetails().getAge())

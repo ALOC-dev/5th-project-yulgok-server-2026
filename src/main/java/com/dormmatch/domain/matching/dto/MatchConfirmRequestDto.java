@@ -12,6 +12,6 @@ import lombok.Setter;
 @Setter
 public class MatchConfirmRequestDto {
     @NotNull
-    private Long receiverId;
+    private String receiverId;
 }
 

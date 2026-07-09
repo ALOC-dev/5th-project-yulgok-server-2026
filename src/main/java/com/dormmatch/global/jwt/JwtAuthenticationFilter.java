@@ -1,5 +1,6 @@
 package com.dormmatch.global.jwt;
 
+import com.dormmatch.global.util.HashIdsUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -36,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             Claims claims = jwtTokenProvider.parseClaims(token);
-            Long userId = Long.valueOf(claims.getSubject());
+            Long userId = HashIdsUtils.decode(claims.getSubject());
             String role = claims.get("role", String.class);
 
             // AOP와 @AuthenticationPrincipal에서 Long userId를 그대로 사용할 수 있게 저장한다.

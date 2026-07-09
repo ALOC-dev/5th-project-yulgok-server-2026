@@ -12,6 +12,7 @@ import com.dormmatch.global.config.KakaoProperties;
 import com.dormmatch.global.exception.BusinessException;
 import com.dormmatch.global.exception.ErrorCode;
 import com.dormmatch.global.jwt.JwtTokenProvider;
+import com.dormmatch.global.util.HashIdsUtils;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
@@ -54,11 +55,12 @@ public class AuthService {
         // 카카오 회원번호를 기준으로 우리 DB의 기존 유저를 찾고, 없으면 새로 가입시킵니다.
         UserRegistration userRegistration = findOrCreateUser(userInfo);
         Users user = userRegistration.user();
-        String userId = user.getId().toString();
+        Long internalUserId = user.getId();
+        String encodedUserId = HashIdsUtils.encode(internalUserId);
 
         // JWT에는 userId를 String subject로 통일해서 저장합니다.
-        String accessToken = jwtTokenProvider.createAccessToken(userId, user.getRole());
-        String refreshToken = jwtTokenProvider.createRefreshToken(userId, user.getRole());
+        String accessToken = jwtTokenProvider.createAccessToken(encodedUserId, user.getRole());
+        String refreshToken = jwtTokenProvider.createRefreshToken(encodedUserId, user.getRole());
 
         // 로그인 결과와 사용자 기본 정보를 프론트엔드에 반환합니다.
         LoginResponseDto response = LoginResponseDto.builder()
@@ -66,7 +68,7 @@ public class AuthService {
                 .refreshToken(refreshToken)
                 .isNewUser(userRegistration.isNewUser())
                 .user(LoginResponseDto.UserInfo.builder()
-                        .id(user.getId())
+                        .id(encodedUserId)
                         .nickname(user.getNickname())
                         .role(user.getRole())
                         .status(user.getStatus())
@@ -87,16 +89,17 @@ public class AuthService {
 
         // JWT subject에서 String userId를 꺼냅니다.
         Claims claims = jwtTokenProvider.parseClaims(refreshToken);
-        String userId = claims.getSubject();
+        String encodedUserId = claims.getSubject();
+        Long internalUserId = HashIdsUtils.decode(encodedUserId);
 
         // Repository 접근 시점에만 DB PK 타입인 Long으로 변환합니다.
-        Users user = usersRepository.findById(Long.valueOf(userId)).orElse(null);
+        Users user = usersRepository.findById(Long.valueOf(internalUserId)).orElse(null);
         if (user == null) {
             return null;
         }
 
         // Access Token만 새로 발급합니다.
-        String accessToken = jwtTokenProvider.createAccessToken(userId, user.getRole());
+        String accessToken = jwtTokenProvider.createAccessToken(encodedUserId, user.getRole());
 
         return RefreshTokenResponseDto.builder()
                 .accessToken(accessToken)
@@ -132,7 +135,7 @@ public class AuthService {
         return AuthStatusResponseDto.builder()
                 .authenticated(true)
                 .user(AuthStatusResponseDto.UserInfo.builder()
-                        .id(user.getId())
+                        .id(HashIdsUtils.encode(user.getId()))
                         .nickname(user.getNickname())
                         .role(user.getRole())
                         .status(user.getStatus())

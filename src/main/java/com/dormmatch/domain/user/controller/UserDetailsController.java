@@ -33,7 +33,7 @@ public class UserDetailsController {
      */
     @GetMapping("/me")
     public ResponseEntity<GlobalApiResponse<UserProfileResponseDto>> getProfile(
-            @AuthenticationPrincipal String userId
+            @AuthenticationPrincipal Long userId
     ) {
         // 1. 서비스에 유저 ID를 넘겨 프로필 데이터를 조회합니다.
         UserProfileResponseDto response = userDetailsService.getProfile(userId);
@@ -49,7 +49,7 @@ public class UserDetailsController {
      */
     @PatchMapping("/me")
     public ResponseEntity<GlobalApiResponse<UserProfileUpdateResponseDto>> updateProfile(
-            @AuthenticationPrincipal String userId,
+            @AuthenticationPrincipal Long userId,
             @Valid @RequestBody UserProfileUpdateRequestDto request
     ) {
         // 1. 서비스에 유저 ID와 수정할 내용(request)을 넘겨 데이터를 업데이트합니다.
@@ -65,7 +65,7 @@ public class UserDetailsController {
      */
     @PostMapping("/details")
     public ResponseEntity<GlobalApiResponse<UserDetailsResponseDto>> createDetails(
-            @AuthenticationPrincipal String userId,
+            @AuthenticationPrincipal Long userId,
             @Valid @RequestBody UserDetailsRequestDto request
     ) {
         // 1. 서비스에 유저 ID와 필수 정보 입력 데이터를 넘겨 새로운 정보(UserDetails)를 생성합니다.

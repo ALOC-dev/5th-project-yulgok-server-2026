@@ -7,6 +7,7 @@ import com.dormmatch.domain.matching.service.MatchingService;
 import com.dormmatch.global.exception.BusinessException;
 import com.dormmatch.global.exception.ErrorCode;
 import com.dormmatch.global.response.GlobalApiResponse;
+import com.dormmatch.global.util.HashIdsUtils;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
@@ -86,12 +87,12 @@ public class MatchingController {
     ){
 
         if(requestDto.getMatchStatus().equals("REJECT")){
-            matchingService.reject(userId, requestDto.getReceiverId());
+            matchingService.reject(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
             return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"하트 거절 성공",null));
         }
 
         if(requestDto.getMatchStatus().equals("HEART")){
-            matchingService.heart(userId, requestDto.getReceiverId());
+            matchingService.heart(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
             return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "하트 전달 성공", null));
         }
 
@@ -113,7 +114,8 @@ public class MatchingController {
             @Valid @RequestBody MatchConfirmRequestDto requestDto
     ){
 
-        matchingService.confirm(userId, requestDto.getReceiverId());
+
+        matchingService.confirm(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
         return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "매칭 확정 전달 성공", null));
     }
 

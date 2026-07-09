@@ -8,6 +8,7 @@ import com.dormmatch.domain.chat.service.ChatService;
 import com.dormmatch.global.response.GlobalApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,7 +29,7 @@ public class ChatController {
     @GetMapping("/rooms")
     public ResponseEntity<GlobalApiResponse<ChatRoomsResponseDto>> getChatRooms(
             // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
-            @RequestParam(defaultValue = "1") Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         ChatRoomsResponseDto responseDto = chatService.getChatRooms(userId);
 
@@ -55,7 +56,7 @@ public class ChatController {
     public ResponseEntity<GlobalApiResponse<ChatReadResponseDto>> markMessagesAsRead(
             @PathVariable Long roomId,
             // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
-            @RequestParam(defaultValue = "1") Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         ChatReadResponseDto responseDto = chatService.markMessagesAsRead(roomId, userId);
 
@@ -67,7 +68,7 @@ public class ChatController {
     @GetMapping("/unread-count")
     public ResponseEntity<GlobalApiResponse<ChatUnreadCountResponseDto>> getTotalUnreadCount(
             // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
-            @RequestParam(defaultValue = "1") Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         ChatUnreadCountResponseDto responseDto = chatService.getTotalUnreadCount(userId);
 

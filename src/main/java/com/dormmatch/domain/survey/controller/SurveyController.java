@@ -35,7 +35,6 @@ public class SurveyController {
             @ApiResponse(responseCode = "409", description = "이미 설문을 제출한 상태입니다.")
     })
     @PostMapping
-    @RequiresAuth
     public ResponseEntity<GlobalApiResponse<?>> saveUserPreferences(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody UserPreferencesRequestDto requestDto){
@@ -58,7 +57,6 @@ public class SurveyController {
             @ApiResponse(responseCode = "404", description = "설문 내역을 찾을 수 없습니다.")
     })
     @GetMapping("/me")
-    @RequiresAuth
     @RequiresSurvey
     public ResponseEntity<GlobalApiResponse<?>> getUserPreferences(
             @AuthenticationPrincipal Long userId

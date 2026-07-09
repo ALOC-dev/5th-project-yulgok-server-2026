@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 public class MatchingRequestDto {
     @NotNull
-    Long receiverId;
+    String receiverId;
 
     @NotNull
     @Pattern(regexp="HEART|REJECT",message = "matchStatus는 HEART 또는 REJECT만 가능합니다.")
