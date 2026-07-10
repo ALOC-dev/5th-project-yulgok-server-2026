@@ -28,7 +28,6 @@ public class ChatController {
 
     @GetMapping("/rooms")
     public ResponseEntity<GlobalApiResponse<ChatRoomsResponseDto>> getChatRooms(
-            // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
             @AuthenticationPrincipal Long userId
     ) {
         ChatRoomsResponseDto responseDto = chatService.getChatRooms(userId);
@@ -41,11 +40,11 @@ public class ChatController {
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<GlobalApiResponse<ChatMessagesResponseDto>> getMessages(
             @PathVariable Long roomId,
+            @AuthenticationPrincipal Long userId,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "30") int size
     ) {
-        // TODO: 매칭/유저 도메인 연결 후 roomId에 대한 참여자 검증 추가
-        ChatMessagesResponseDto responseDto = chatService.getMessages(roomId, cursor, size);
+        ChatMessagesResponseDto responseDto = chatService.getMessages(roomId, userId, cursor, size);
 
         return ResponseEntity.ok(
                 GlobalApiResponse.success(HttpStatus.OK, "채팅방 메시지 조회 성공", responseDto)
@@ -55,7 +54,6 @@ public class ChatController {
     @PatchMapping("/rooms/{roomId}/read")
     public ResponseEntity<GlobalApiResponse<ChatReadResponseDto>> markMessagesAsRead(
             @PathVariable Long roomId,
-            // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
             @AuthenticationPrincipal Long userId
     ) {
         ChatReadResponseDto responseDto = chatService.markMessagesAsRead(roomId, userId);
@@ -67,7 +65,6 @@ public class ChatController {
 
     @GetMapping("/unread-count")
     public ResponseEntity<GlobalApiResponse<ChatUnreadCountResponseDto>> getTotalUnreadCount(
-            // TODO: 인증 연동 후 @AuthenticationPrincipal Long userId로 변경
             @AuthenticationPrincipal Long userId
     ) {
         ChatUnreadCountResponseDto responseDto = chatService.getTotalUnreadCount(userId);

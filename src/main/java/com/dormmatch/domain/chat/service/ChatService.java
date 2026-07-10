@@ -3,8 +3,11 @@ package com.dormmatch.domain.chat.service;
 import com.dormmatch.domain.chat.dto.ChatMessageResponseDto;
 import com.dormmatch.domain.chat.dto.ChatMessagesResponseDto;
 import com.dormmatch.domain.chat.dto.ChatReadResponseDto;
+import com.dormmatch.domain.chat.dto.ChatRoomLastMessageDto;
+import com.dormmatch.domain.chat.dto.ChatRoomPartnerDto;
 import com.dormmatch.domain.chat.dto.ChatRoomResponseDto;
 import com.dormmatch.domain.chat.dto.ChatRoomsResponseDto;
+import com.dormmatch.domain.chat.dto.ChatRoomUnreadCountDto;
 import com.dormmatch.domain.chat.dto.ChatUnreadCountResponseDto;
 import com.dormmatch.domain.chat.entity.ChatMessage;
 import com.dormmatch.domain.chat.entity.ChatRoom;
@@ -17,8 +20,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
@@ -26,34 +31,51 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
 
-    public ChatService(ChatRoomRepository chatRoomRepository, ChatMessageRepository chatMessageRepository) {
+    public ChatService(ChatRoomRepository chatRoomRepository,
+                       ChatMessageRepository chatMessageRepository) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatMessageRepository = chatMessageRepository;
     }
 
     @Transactional(readOnly = true)
     public ChatRoomsResponseDto getChatRooms(Long userId) {
-        List<ChatRoomResponseDto> rooms = chatRoomRepository.findAllByParticipantId(userId)
+        List<ChatRoomPartnerDto> roomPartners = chatRoomRepository.findRoomPartnersByUserId(userId);
+
+        List<Long> roomIds = roomPartners.stream()
+                .map(ChatRoomPartnerDto::roomId)
+                .toList();
+
+        if (roomIds.isEmpty()) {
+            return new ChatRoomsResponseDto(List.of());
+        }
+
+        // 방별 마지막 메시지와 안 읽은 개수를 일괄 조회해서 목록 조회 시 반복 쿼리를 줄인다.
+        Map<Long, ChatRoomLastMessageDto> lastMessageMap = chatMessageRepository.findLastMessagesByRoomIds(roomIds)
                 .stream()
+                .collect(Collectors.toMap(
+                        ChatRoomLastMessageDto::roomId,
+                        Function.identity()
+                ));
+
+        Map<Long, Long> unreadCountMap = chatMessageRepository.countUnreadByRoomIds(roomIds, userId)
+                .stream()
+                .collect(Collectors.toMap(
+                        ChatRoomUnreadCountDto::roomId,
+                        ChatRoomUnreadCountDto::unreadCount
+                ));
+
+        List<ChatRoomResponseDto> rooms = roomPartners.stream()
                 .map(room -> {
-                    ChatMessage lastMessage = chatMessageRepository
-                            .findTopByRoomIdOrderByCreatedAtDesc(room.getId())
-                            .orElse(null);
+                    ChatRoomLastMessageDto lastMessage = lastMessageMap.get(room.roomId());
+                    Long unreadCount = unreadCountMap.getOrDefault(room.roomId(), 0L);
 
-                    String lastMessageText = lastMessage == null ? null : lastMessage.getMessage();
-                    LocalDateTime lastMessageTime = lastMessage == null ? null : lastMessage.getCreatedAt();
-
-                    int unreadCount = chatMessageRepository
-                            .countByRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId);
-
-                    // TODO: 유저 도메인 연결 후 실제 상대방 이름/프로필 이미지로 교체
                     return new ChatRoomResponseDto(
-                            room.getId(),
-                            "상대방",
-                            null,
-                            lastMessageText,
-                            lastMessageTime,
-                            unreadCount
+                            room.roomId(),
+                            room.partnerName(),
+                            room.partnerProfileImageUrl(),
+                            lastMessage == null ? null : lastMessage.lastMessage(),
+                            lastMessage == null ? null : lastMessage.lastMessageTime(),
+                            unreadCount.intValue()
                     );
                 })
                 .toList();
@@ -62,8 +84,9 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    public ChatMessagesResponseDto getMessages(Long roomId, Long cursor, int size) {
+    public ChatMessagesResponseDto getMessages(Long roomId, Long userId, Long cursor, int size) {
         validateRoomExists(roomId);
+        validateRoomParticipant(roomId, userId);
 
         // size + 1개를 조회해서 다음 페이지가 있는지 판단한다.
         PageRequest pageRequest = PageRequest.of(0, size + 1);
@@ -85,6 +108,7 @@ public class ChatService {
     @Transactional
     public ChatReadResponseDto markMessagesAsRead(Long roomId, Long userId) {
         validateRoomExists(roomId);
+        validateRoomParticipant(roomId, userId);
 
         // 내가 보낸 메시지는 읽음 처리 대상에서 제외한다.
         List<ChatMessage> unreadMessages =
@@ -106,6 +130,7 @@ public class ChatService {
     public ChatMessageResponseDto sendMessage(Long roomId, Long senderId, String message) {
         ChatRoom chatRoom = getChatRoom(roomId);
         validateSendable(chatRoom, senderId, message);
+        validateRoomParticipant(roomId, senderId);
 
         ChatMessage chatMessage = ChatMessage.create(roomId, senderId, message.trim());
         ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
@@ -136,12 +161,17 @@ public class ChatService {
         }
     }
 
+    private void validateRoomParticipant(Long roomId, Long userId) {
+        if (userId == null || !chatRoomRepository.existsByRoomIdAndParticipantId(roomId, userId)) {
+            throw new BusinessException(ErrorCode.NOT_CHAT_PARTICIPANT);
+        }
+    }
+
     private void validateSendable(ChatRoom chatRoom, Long senderId, String message) {
         if (chatRoom.isClosed()) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_CLOSED);
         }
 
-        // TODO: senderId가 해당 채팅방 참여자인지 검증
         if (senderId == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
