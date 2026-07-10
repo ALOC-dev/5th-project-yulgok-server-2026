@@ -69,6 +69,7 @@ public class Users {
 
     public void activate()  { this.status = "ACTIVE"; }
     public void ban()       { this.status = "BANNED"; }
+    public void unban()     { this.status = "ACTIVE"; }
     public void promoteToUser() { this.role = "USER"; }
 
 
