@@ -19,14 +19,14 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
     FROM MatchRequests mr
     WHERE (
         mr.userLow.id = :userId
-        AND mr.userLowStatus = com.dormmatch.domain.matching.entity.MatchStatus.NONE
-        AND mr.userHighStatus = com.dormmatch.domain.matching.entity.MatchStatus.RECOMMENDED
+        AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
+        AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.RECOMMENDED
         AND mr.userHighPreferences.smokingStatus = :smokingStatus
     )
     OR (
         mr.userHigh.id = :userId
-        AND mr.userHighStatus = com.dormmatch.domain.matching.entity.MatchStatus.NONE
-        AND mr.userLowStatus = com.dormmatch.domain.matching.entity.MatchStatus.RECOMMENDED
+        AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
+        AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.RECOMMENDED
         AND mr.userLowPreferences.smokingStatus = :smokingStatus
     )
     ORDER BY mr.matchPercentage DESC
@@ -44,14 +44,14 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
     FROM MatchRequests mr
     WHERE (
         mr.userLow.id = :userId
-        AND mr.userLowStatus = com.dormmatch.domain.matching.entity.MatchStatus.NONE
-        AND mr.userHighStatus = com.dormmatch.domain.matching.entity.MatchStatus.RECOMMENDED
+        AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
+        AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.RECOMMENDED
         
     )
     OR (
         mr.userHigh.id = :userId
-        AND mr.userHighStatus = com.dormmatch.domain.matching.entity.MatchStatus.NONE
-        AND mr.userLowStatus = com.dormmatch.domain.matching.entity.MatchStatus.RECOMMENDED
+        AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
+        AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.RECOMMENDED
     )
     ORDER BY mr.matchPercentage DESC
 """)
@@ -76,17 +76,17 @@ JOIN FETCH uh.userPreferences
 WHERE (
     mr.userLow.id = :userId
     AND mr.userLowStatus NOT IN (
-        com.dormmatch.domain.matching.entity.MatchStatus.NONE,
-        com.dormmatch.domain.matching.entity.MatchStatus.REJECTED,
-        com.dormmatch.domain.matching.entity.MatchStatus.CLOSED
+        com.irummate.domain.matching.entity.MatchStatus.NONE,
+        com.irummate.domain.matching.entity.MatchStatus.REJECTED,
+        com.irummate.domain.matching.entity.MatchStatus.CLOSED
     )
 )
 OR (
     mr.userHigh.id = :userId
     AND mr.userHighStatus NOT IN (
-        com.dormmatch.domain.matching.entity.MatchStatus.NONE,
-        com.dormmatch.domain.matching.entity.MatchStatus.REJECTED,
-        com.dormmatch.domain.matching.entity.MatchStatus.CLOSED
+        com.irummate.domain.matching.entity.MatchStatus.NONE,
+        com.irummate.domain.matching.entity.MatchStatus.REJECTED,
+        com.irummate.domain.matching.entity.MatchStatus.CLOSED
     )
 )
 ORDER BY mr.matchPercentage DESC

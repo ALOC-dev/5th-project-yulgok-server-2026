@@ -29,7 +29,7 @@ public class ValidationAspect {
 
     // survey가 완료된 상태인지 검증
     // @RequiresSurvey를 메서드 앞에 붙여서 사용
-    @Before("@annotation(com.dormmatch.global.aop.RequiresSurvey)")
+    @Before("@annotation(com.irummate.global.aop.RequiresSurvey)")
     public void checkSurveyCompleted(JoinPoint joinPoint){
         Long userId = extractUserId(joinPoint);
 
@@ -46,7 +46,7 @@ public class ValidationAspect {
 
     // 인증서 인증
     // @RequiresCertification
-    @Before("@annotation(com.dormmatch.global.aop.RequiresCertification)")
+    @Before("@annotation(com.irummate.global.aop.RequiresCertification)")
     public void checkCertification(JoinPoint joinPoint){
         Long userId = extractUserId(joinPoint);
 
