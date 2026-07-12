@@ -1,7 +1,7 @@
-package com.dormmatch.domain.chat.repository;
+package com.irummate.domain.chat.repository;
 
-import com.dormmatch.domain.chat.dto.ChatRoomPartnerDto;
-import com.dormmatch.domain.chat.entity.ChatRoom;
+import com.irummate.domain.chat.dto.ChatRoomPartnerDto;
+import com.irummate.domain.chat.entity.ChatRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +16,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     // 채팅방 목록에 필요한 상대방 정보를 매칭 요청과 유저 정보에서 한 번에 조회한다.
     @Query("""
-            SELECT new com.dormmatch.domain.chat.dto.ChatRoomPartnerDto(
+            SELECT new com.irummate.domain.chat.dto.ChatRoomPartnerDto(
                 cr.id,
                 CASE
                     WHEN mr.userLow.id = :userId THEN mr.userHigh.nickname
@@ -55,4 +55,17 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
               AND (mr.userLow.id = :userId OR mr.userHigh.id = :userId)
             """)
     boolean existsByRoomIdAndParticipantId(@Param("roomId") Long roomId, @Param("userId") Long userId);
+
+    // 현재 유저의 상대방 userId를 조회한다.
+    @Query("""
+            SELECT CASE
+                WHEN mr.userLow.id = :userId THEN mr.userHigh.id
+                ELSE mr.userLow.id
+            END
+            FROM ChatRoom cr
+            JOIN MatchRequests mr ON mr.id = cr.matchRequestId
+            WHERE cr.id = :roomId
+              AND (mr.userLow.id = :userId OR mr.userHigh.id = :userId)
+            """)
+    Optional<Long> findPartnerIdByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
 }

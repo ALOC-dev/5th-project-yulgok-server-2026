@@ -1,7 +1,7 @@
-package com.dormmatch.domain.certification.repository;
+package com.irummate.domain.certification.repository;
 
-import com.dormmatch.domain.certification.entity.Certification;
-import com.dormmatch.domain.certification.entity.CertificationStatus;
+import com.irummate.domain.certification.entity.Certification;
+import com.irummate.domain.certification.entity.CertificationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;

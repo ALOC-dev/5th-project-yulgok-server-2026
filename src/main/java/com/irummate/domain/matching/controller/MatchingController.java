@@ -17,7 +17,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -25,25 +30,23 @@ import java.util.List;
 @RequestMapping("/api/matching")
 public class MatchingController {
 
-
     private final MatchingService matchingService;
 
     @Autowired
-    public MatchingController(MatchingService matchingService){
+    public MatchingController(MatchingService matchingService) {
         this.matchingService = matchingService;
     }
 
-
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "매칭 카드 목록 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
-            @ApiResponse(responseCode = "403", description = "인증 또는 설문 작성이 완료되지 않았습니다.")
+            @ApiResponse(responseCode = "401", description = "인증 토큰 없음 또는 만료"),
+            @ApiResponse(responseCode = "403", description = "인증 또는 설문 제출이 필요함")
     })
     @RequiresSurvey
     @GetMapping("/status")
     public ResponseEntity<GlobalApiResponse<?>> getMatchingStatus(
             @AuthenticationPrincipal Long userId
-    ){
+    ) {
         List<MatchingResponseDto> responseDtos = matchingService.getMatchingStatus(userId);
 
         return ResponseEntity.ok(
@@ -56,20 +59,19 @@ public class MatchingController {
         );
     }
 
-
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "오늘의 매칭 추천 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
-            @ApiResponse(responseCode = "403", description = "인증 또는 설문 작성이 완료되지 않았습니다."),
-            @ApiResponse(responseCode = "404", description = "유저 또는 설문 정보를 찾을 수 없습니다."),
-            @ApiResponse(responseCode = "409", description = "이미 최종 매칭되었거나 오늘 이미 매칭 추천을 완료했습니다.")
+            @ApiResponse(responseCode = "401", description = "인증 토큰 없음 또는 만료"),
+            @ApiResponse(responseCode = "403", description = "인증 또는 설문 제출이 필요함"),
+            @ApiResponse(responseCode = "404", description = "사용자 또는 설문 정보를 찾을 수 없음"),
+            @ApiResponse(responseCode = "409", description = "이미 최종 매칭되었거나 오늘 이미 매칭 추천을 완료함")
     })
     @RequiresSurvey
     @RequiresMatchDate
     @PostMapping("/match")
     public ResponseEntity<GlobalApiResponse<?>> match(
             @AuthenticationPrincipal Long userId
-    ){
+    ) {
         matchingService.match(userId);
 
         return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "매칭 성공", null));
@@ -77,11 +79,11 @@ public class MatchingController {
 
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "하트 전달 또는 거절 처리 성공"),
-            @ApiResponse(responseCode = "400", description = "요청 값이 올바르지 않습니다. matchStatus는 HEART 또는 REJECT만 가능합니다."),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
-            @ApiResponse(responseCode = "403", description = "인증 또는 설문 작성이 완료되지 않았습니다."),
-            @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없습니다."),
-            @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 하트 전달 또는 거절을 할 수 없습니다.")
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 값. matchStatus는 HEART 또는 REJECT만 가능"),
+            @ApiResponse(responseCode = "401", description = "인증 토큰 없음 또는 만료"),
+            @ApiResponse(responseCode = "403", description = "인증 또는 설문 제출이 필요함"),
+            @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없음"),
+            @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 하트 전달 또는 거절을 할 수 없음")
     })
     @RequiresSurvey
     @RequiresMatchDate
@@ -89,29 +91,28 @@ public class MatchingController {
     public ResponseEntity<GlobalApiResponse<?>> sendHeartOrRejectToReceiver(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody MatchingRequestDto requestDto
-    ){
+    ) {
 
-        if(requestDto.getMatchStatus().equals("REJECT")){
+        if (requestDto.getMatchStatus().equals("REJECT")) {
             matchingService.reject(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
-            return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"하트 거절 성공",null));
+            return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "하트 거절 성공", null));
         }
 
-        if(requestDto.getMatchStatus().equals("HEART")){
+        if (requestDto.getMatchStatus().equals("HEART")) {
             matchingService.heart(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
             return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "하트 전달 성공", null));
         }
-
 
         throw new BusinessException(ErrorCode.BAD_REQUEST, "잘못된 요청입니다. 요청은 HEART/REJECT만 가능합니다.");
     }
 
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "최종 매칭 확정 성공"),
-            @ApiResponse(responseCode = "400", description = "요청 값이 올바르지 않습니다."),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
-            @ApiResponse(responseCode = "403", description = "인증 또는 설문 작성이 완료되지 않았습니다."),
-            @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없습니다."),
-            @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 최종 확정을 할 수 없습니다.")
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 값"),
+            @ApiResponse(responseCode = "401", description = "인증 토큰 없음 또는 만료"),
+            @ApiResponse(responseCode = "403", description = "인증 또는 설문 제출이 필요함"),
+            @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없음"),
+            @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 최종 확정을 할 수 없음")
     })
     @RequiresSurvey
     @RequiresMatchDate
@@ -119,9 +120,8 @@ public class MatchingController {
     public ResponseEntity<GlobalApiResponse<?>> sendConfirm(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody MatchConfirmRequestDto requestDto
-    ){
+    ) {
         matchingService.confirm(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
         return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "매칭 확정 전달 성공", null));
     }
-
 }

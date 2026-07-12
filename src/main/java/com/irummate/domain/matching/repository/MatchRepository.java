@@ -61,9 +61,8 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
     );
 
 
-    // 자기 자신이 포함된 match를 조회
-// 단, 내가 아직 추천받지 않았거나(NONE) 내가 거절한(REJECTED) match는 조회 대상에서 제외
-// (상대방이 거절한 것은 포함)
+    // ?먭린 ?먯떊???ы븿??match瑜?議고쉶
+// (?곷?諛⑹씠 嫄곗젅??寃껋? ?ы븿)
 @Query("""
 SELECT DISTINCT mr
 FROM MatchRequests mr

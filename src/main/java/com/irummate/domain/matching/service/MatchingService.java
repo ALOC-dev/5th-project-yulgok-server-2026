@@ -158,7 +158,6 @@ public class MatchingService {
         List<MatchingResponseDto> matchingResponseDtos = new ArrayList<>();
 
         for(MatchRequests matchRequest : myMatchRequests){
-            // 상대방 추출
             Users other = matchRequest.getUserHigh().getId().equals(userId)
                     ? matchRequest.getUserLow()
                     : matchRequest.getUserHigh();

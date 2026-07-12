@@ -4,7 +4,7 @@ import org.hashids.Hashids;
 
 public final class HashIdsUtils {
 
-    private static final Hashids HASHIDS = new Hashids("dormmatch-user-id", 8);
+    private static final Hashids HASHIDS = new Hashids("irummate-user-id", 8);
 
     private HashIdsUtils() {
     }

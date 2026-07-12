@@ -1,4 +1,4 @@
-package com.dormmatch.domain.certification.dto;
+package com.irummate.domain.certification.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

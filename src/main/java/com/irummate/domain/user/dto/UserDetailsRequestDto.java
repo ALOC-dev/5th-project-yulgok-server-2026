@@ -28,7 +28,7 @@ public class UserDetailsRequestDto {
     @NotBlank(message = "department는 필수입니다.")
     private String department;
 
-    @NotBlank(message = "phoneNumber is required.")
-    @Pattern(regexp = "^010-\\d{3,4}-\\d{4}$", message = "phoneNumber must match 010-1234-5678 format.")
+    @NotBlank(message = "phoneNumber는 필수입니다.")
+    @Pattern(regexp = "^010-\\d{3,4}-\\d{4}$", message = "phoneNumber는 010-1234-5678 형식이어야 합니다.")
     private String phoneNumber;
 }

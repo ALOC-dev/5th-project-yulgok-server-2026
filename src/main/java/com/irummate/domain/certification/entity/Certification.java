@@ -1,6 +1,6 @@
-package com.dormmatch.domain.certification.entity;
+package com.irummate.domain.certification.entity;
 
-import com.dormmatch.domain.user.entity.Users;
+import com.irummate.domain.user.entity.Users;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

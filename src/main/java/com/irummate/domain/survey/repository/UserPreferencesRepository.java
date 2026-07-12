@@ -60,7 +60,7 @@ public interface UserPreferencesRepository extends JpaRepository<UserPreferences
             @Param("myUserId") Long myUserId,
             @Param("gender") String gender,
             @Param("smokingStatus") Integer smokingStatus,
-            @Param("vector") String vector,   // ← PGvector에서 String으로
+            @Param("vector") String vector,   // ??PGvector?먯꽌 String?쇰줈
             @Param("limit") int limit
     );
 
@@ -95,7 +95,7 @@ public interface UserPreferencesRepository extends JpaRepository<UserPreferences
             @Param("myUserId") Long myUserId,
             @Param("gender") String gender,
             @Param("excludedUserIds") List<Long> excludedUserIds,
-            @Param("vector") String vector,   // ← String으로
+            @Param("vector") String vector,   // ??String?쇰줈
             @Param("limit") int limit
     );
 

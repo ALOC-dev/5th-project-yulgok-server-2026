@@ -29,7 +29,7 @@ dependencies {
 	implementation 'com.github.f4b6a3:ulid-creator:5.2.3'
 	implementation 'org.hashids:hashids:1.0.3'
 
-    // DB
+	// DB
 	implementation 'com.pgvector:pgvector:0.1.6'
 	runtimeOnly 'org.postgresql:postgresql'
 	implementation 'org.hibernate.orm:hibernate-vector:6.6.42.Final'
@@ -45,9 +45,8 @@ dependencies {
 
 	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-	runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.12.6'
-	runtimeOnly    'io.jsonwebtoken:jjwt-jackson:0.12.6'
-
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
 	// Swagger
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'

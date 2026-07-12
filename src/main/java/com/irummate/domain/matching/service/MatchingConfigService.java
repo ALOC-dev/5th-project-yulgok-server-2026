@@ -17,14 +17,13 @@ public class MatchingConfigService {
     private final MatchingConfigRepository matchingConfigRepository;
 
     @Autowired
-    public MatchingConfigService(MatchingConfigRepository matchingConfigRepository){
+    public MatchingConfigService(MatchingConfigRepository matchingConfigRepository) {
         this.matchingConfigRepository = matchingConfigRepository;
     }
 
-
     @Transactional
     public void setMatchDate(LocalDate matchStartDate,
-                             LocalDate matchEndDate){
+                             LocalDate matchEndDate) {
 
         if (matchStartDate == null || matchEndDate == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "매칭 시작일과 종료일은 필수입니다.");
@@ -35,18 +34,17 @@ public class MatchingConfigService {
         }
 
         MatchingConfig config = matchingConfigRepository.findById(MatchingConfig.SINGLETON_ID)
-                .orElseGet(()->new MatchingConfig(matchStartDate, matchEndDate));
+                .orElseGet(() -> new MatchingConfig(matchStartDate, matchEndDate));
 
         config.updateMatchStartDate(matchStartDate);
         config.updateMatchEndDate(matchEndDate);
         matchingConfigRepository.save(config);
-
     }
 
     @Transactional(readOnly = true)
-    public MatchingConfigDto getMatchDate(){
+    public MatchingConfigDto getMatchDate() {
         MatchingConfig config = matchingConfigRepository.findById(MatchingConfig.SINGLETON_ID)
-                .orElseThrow(()->new BusinessException(ErrorCode.MATCH_DATE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MATCH_DATE_NOT_FOUND));
 
         MatchingConfigDto matchingConfigDto = new MatchingConfigDto();
         matchingConfigDto.setMatchStartDate(config.getMatchStartDate());
@@ -54,8 +52,4 @@ public class MatchingConfigService {
 
         return matchingConfigDto;
     }
-
-
 }
-
-

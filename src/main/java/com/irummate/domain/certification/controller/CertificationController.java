@@ -1,9 +1,9 @@
-package com.dormmatch.domain.certification.controller;
+package com.irummate.domain.certification.controller;
 
-import com.dormmatch.domain.certification.dto.CertificationRequestDto;
-import com.dormmatch.domain.certification.dto.CertificationResponseDto;
-import com.dormmatch.domain.certification.service.CertificationService;
-import com.dormmatch.global.response.GlobalApiResponse;
+import com.irummate.domain.certification.dto.CertificationRequestDto;
+import com.irummate.domain.certification.dto.CertificationResponseDto;
+import com.irummate.domain.certification.service.CertificationService;
+import com.irummate.global.response.GlobalApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

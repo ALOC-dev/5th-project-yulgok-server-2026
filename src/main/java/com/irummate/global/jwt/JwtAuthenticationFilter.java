@@ -40,7 +40,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long userId = HashIdsUtils.decode(claims.getSubject());
             String role = claims.get("role", String.class);
 
-            // AOP와 @AuthenticationPrincipal에서 Long userId를 그대로 사용할 수 있게 저장한다.
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             userId,

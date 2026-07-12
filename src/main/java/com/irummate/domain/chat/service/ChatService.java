@@ -1,21 +1,21 @@
-package com.dormmatch.domain.chat.service;
+package com.irummate.domain.chat.service;
 
-import com.dormmatch.domain.chat.dto.ChatMessageResponseDto;
-import com.dormmatch.domain.chat.dto.ChatMessagesResponseDto;
-import com.dormmatch.domain.chat.dto.ChatReadResponseDto;
-import com.dormmatch.domain.chat.dto.ChatRoomLastMessageDto;
-import com.dormmatch.domain.chat.dto.ChatRoomPartnerDto;
-import com.dormmatch.domain.chat.dto.ChatRoomResponseDto;
-import com.dormmatch.domain.chat.dto.ChatRoomsResponseDto;
-import com.dormmatch.domain.chat.dto.ChatRoomUnreadCountDto;
-import com.dormmatch.domain.chat.dto.ChatUnreadCountResponseDto;
-import com.dormmatch.domain.chat.entity.ChatMessage;
-import com.dormmatch.domain.chat.entity.ChatRoom;
-import com.dormmatch.domain.chat.entity.ChatRoomStatus;
-import com.dormmatch.domain.chat.repository.ChatMessageRepository;
-import com.dormmatch.domain.chat.repository.ChatRoomRepository;
-import com.dormmatch.global.exception.BusinessException;
-import com.dormmatch.global.exception.ErrorCode;
+import com.irummate.domain.chat.dto.ChatMessageResponseDto;
+import com.irummate.domain.chat.dto.ChatMessagesResponseDto;
+import com.irummate.domain.chat.dto.ChatReadResponseDto;
+import com.irummate.domain.chat.dto.ChatRoomLastMessageDto;
+import com.irummate.domain.chat.dto.ChatRoomPartnerDto;
+import com.irummate.domain.chat.dto.ChatRoomResponseDto;
+import com.irummate.domain.chat.dto.ChatRoomsResponseDto;
+import com.irummate.domain.chat.dto.ChatRoomUnreadCountDto;
+import com.irummate.domain.chat.dto.ChatUnreadCountResponseDto;
+import com.irummate.domain.chat.entity.ChatMessage;
+import com.irummate.domain.chat.entity.ChatRoom;
+import com.irummate.domain.chat.entity.ChatRoomStatus;
+import com.irummate.domain.chat.repository.ChatMessageRepository;
+import com.irummate.domain.chat.repository.ChatRoomRepository;
+import com.irummate.global.exception.BusinessException;
+import com.irummate.global.exception.ErrorCode;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -136,6 +136,14 @@ public class ChatService {
         ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
 
         return ChatMessageResponseDto.from(savedMessage);
+    }
+
+    @Transactional(readOnly = true)
+    public Long getPartnerId(Long roomId, Long userId) {
+        validateRoomExists(roomId);
+
+        return chatRoomRepository.findPartnerIdByRoomIdAndUserId(roomId, userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_CHAT_PARTICIPANT));
     }
 
     @Transactional

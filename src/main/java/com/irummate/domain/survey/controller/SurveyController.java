@@ -12,7 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/surveys")
@@ -21,22 +25,21 @@ public class SurveyController {
     private final SurveyService surveyService;
 
     @Autowired
-    public SurveyController(SurveyService surveyService){
+    public SurveyController(SurveyService surveyService) {
         this.surveyService = surveyService;
     }
 
-
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "설문 제출 성공"),
-            @ApiResponse(responseCode = "400", description = "필수 항목 누락 / 값 범위 초과"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
-            @ApiResponse(responseCode = "404", description = "유저를 찾을 수 없습니다."),
-            @ApiResponse(responseCode = "409", description = "이미 설문을 제출한 상태입니다.")
+            @ApiResponse(responseCode = "400", description = "필수 값 누락 또는 요청 값 오류"),
+            @ApiResponse(responseCode = "401", description = "인증 토큰 없음 또는 만료"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @ApiResponse(responseCode = "409", description = "이미 설문을 제출한 상태")
     })
     @PostMapping
     public ResponseEntity<GlobalApiResponse<?>> saveUserPreferences(
             @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody UserPreferencesRequestDto requestDto){
+            @Valid @RequestBody UserPreferencesRequestDto requestDto) {
 
         surveyService.saveSurveyStatus(userId, requestDto);
 
@@ -48,23 +51,21 @@ public class SurveyController {
                 ));
     }
 
-
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "설문 내용 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
-            @ApiResponse(responseCode = "403", description = "설문 작성이 필요합니다."),
-            @ApiResponse(responseCode = "404", description = "설문 내역을 찾을 수 없습니다.")
+            @ApiResponse(responseCode = "401", description = "인증 토큰 없음 또는 만료"),
+            @ApiResponse(responseCode = "403", description = "설문 제출 필요"),
+            @ApiResponse(responseCode = "404", description = "설문 정보를 찾을 수 없음")
     })
     @GetMapping("/me")
     @RequiresSurvey
     public ResponseEntity<GlobalApiResponse<?>> getUserPreferences(
             @AuthenticationPrincipal Long userId
-    ){
+    ) {
         UserPreferencesResponseDto responseDto = surveyService.getSurveyStatus(userId);
 
         return ResponseEntity.ok(
                 GlobalApiResponse.success(HttpStatus.OK, "설문 내용 조회 성공", responseDto)
         );
     }
-
 }

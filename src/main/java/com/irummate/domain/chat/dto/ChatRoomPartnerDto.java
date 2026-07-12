@@ -1,4 +1,4 @@
-package com.dormmatch.domain.chat.dto;
+package com.irummate.domain.chat.dto;
 
 public record ChatRoomPartnerDto(
         Long roomId,

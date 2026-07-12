@@ -12,34 +12,30 @@ import java.util.List;
 @NoArgsConstructor
 public class MatchingResponseDto {
 
-    // 외부 공개용 userId;
+    // ?몃? 怨듦컻??userId;
     private String userId;
 
-    // 학생 이름
+    // ?숈깮 ?대쫫
     private String name;
 
-    // 성별
+    // ?깅퀎
     private String gender;
 
-    // 나이
+    // ?섏씠
     private Integer age;
 
-    // 자기소개
+    // ?먭린?뚭컻
     private String introduce;
 
-    // 학과, 학번
+    // ?숆낵, ?숇쾲
     private String department;
 
-    // 매칭 점수
     private Double matchPercentage;
 
-    //매칭 상태
     private MatchCardStatus matchStatus;
 
-    // 매칭된 날짜
     private LocalDateTime matchDate;
 
-    // 요청자 선택 응답
     List<PreferredAnswerDto> preferredAnswers;
 
 }

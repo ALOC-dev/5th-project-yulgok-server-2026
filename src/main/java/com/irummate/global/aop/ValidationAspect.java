@@ -37,8 +37,6 @@ public class ValidationAspect {
         this.matchingConfigRepository = matchingConfigRepository;
     }
 
-    // survey가 완료된 상태인지 검증
-    // @RequiresSurvey를 메서드 앞에 붙여서 사용
     @Before("@annotation(com.irummate.global.aop.RequiresSurvey)")
     public void checkSurveyCompleted(JoinPoint joinPoint){
         Long userId = extractUserId(joinPoint);
@@ -54,7 +52,6 @@ public class ValidationAspect {
     }
 
 
-    // 인증서 인증
     // @RequiresCertification
     @Before("@annotation(com.irummate.global.aop.RequiresCertification)")
     public void checkCertification(JoinPoint joinPoint){
@@ -64,7 +61,6 @@ public class ValidationAspect {
     }
 
 
-    // 관리자 인증
     // @RequiresAuth
     @Before("@annotation(requiresAuth)")
     public void checkAuth(JoinPoint joinPoint, RequiresAuth requiresAuth){
@@ -88,14 +84,13 @@ public class ValidationAspect {
                 .anyMatch(role -> role.name().equals(user.getRole().name()));
 
         if (!hasRole) {
-            log.warn("[AuthAspect] 권한 없음 - userId: {}, role: {}, required: {}",
+            log.warn("[AuthAspect] 沅뚰븳 ?놁쓬 - userId: {}, role: {}, required: {}",
                     userId, user.getRole(), Arrays.toString(authRole));
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
     }
 
 
-    // 매칭 날짜 검증
     // @RequiresMatchDate
     @Before("@annotation(com.irummate.global.aop.RequiresMatchDate)")
     public void checkMatchDate(){
@@ -111,7 +106,6 @@ public class ValidationAspect {
 
     }
 
-    // 매개변수로 들어오는 userId 확인
     public static Long extractUserId(JoinPoint joinPoint){
         for(Object args : joinPoint.getArgs()) {
             if (args instanceof Long) {

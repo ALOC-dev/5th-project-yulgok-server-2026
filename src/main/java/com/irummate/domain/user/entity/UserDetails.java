@@ -26,7 +26,7 @@ public class UserDetails {
     private String realName;
 
     @Column(name = "student_id", nullable = false)
-    private String studentId;   // 학번
+    private String studentId;   // ?숇쾲
 
     @Column(nullable = false)
     private int age;

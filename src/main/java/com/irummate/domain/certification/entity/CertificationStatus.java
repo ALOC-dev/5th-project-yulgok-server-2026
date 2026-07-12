@@ -1,4 +1,4 @@
-package com.dormmatch.domain.certification.entity;
+package com.irummate.domain.certification.entity;
 
 public enum CertificationStatus {
     PENDING,

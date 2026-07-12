@@ -1,8 +1,8 @@
-package com.dormmatch.domain.chat.repository;
+package com.irummate.domain.chat.repository;
 
-import com.dormmatch.domain.chat.dto.ChatRoomLastMessageDto;
-import com.dormmatch.domain.chat.dto.ChatRoomUnreadCountDto;
-import com.dormmatch.domain.chat.entity.ChatMessage;
+import com.irummate.domain.chat.dto.ChatRoomLastMessageDto;
+import com.irummate.domain.chat.dto.ChatRoomUnreadCountDto;
+import com.irummate.domain.chat.entity.ChatMessage;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -42,7 +42,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     // 채팅방 목록에 표시할 각 방의 마지막 메시지를 한 번에 조회한다.
     @Query("""
-            SELECT new com.dormmatch.domain.chat.dto.ChatRoomLastMessageDto(
+            SELECT new com.irummate.domain.chat.dto.ChatRoomLastMessageDto(
                 cm.roomId,
                 cm.message,
                 cm.createdAt
@@ -59,7 +59,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     // 채팅방 목록에 표시할 방별 안 읽은 메시지 개수를 한 번에 조회한다.
     @Query("""
-            SELECT new com.dormmatch.domain.chat.dto.ChatRoomUnreadCountDto(
+            SELECT new com.irummate.domain.chat.dto.ChatRoomUnreadCountDto(
                 cm.roomId,
                 COUNT(cm)
             )

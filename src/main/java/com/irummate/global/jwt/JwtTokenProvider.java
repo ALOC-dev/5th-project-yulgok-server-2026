@@ -21,31 +21,25 @@ public class JwtTokenProvider {
 
     @PostConstruct
     void init() {
-        // 서버 시작후jwt.scret값을 읽어서 비밀키 객체 만들어줌
         //this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecret()));
         this.secretKey = Keys.hmacShaKeyFor(
                 jwtProperties.getSecret().getBytes()
         );
     }
-    //user id랑 role을 넣어서 access토큰 생성
     public String createAccessToken(String userId, String role) {
         return createToken(userId, role, jwtProperties.getAccessTokenExpiration());
     }
-    //refresh토큰 생성
     public String createRefreshToken(String userId, String role) {
         return createToken(userId, role, jwtProperties.getRefreshTokenExpiration());
     }
-    //토큰 검증
     public boolean validateToken(String token) {
         try {
-            // 파싱 과정에서 서명과 만료 시간이 함께 검증된다.
             parseClaims(token);
             return true;
         } catch (RuntimeException e) {
             return false;
         }
     }
-    //토큰 내용 꺼내기
     public Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
@@ -61,12 +55,10 @@ public class JwtTokenProvider {
     public Long getRefreshTokenExpiration() {
         return jwtProperties.getRefreshTokenExpiration();
     }
-    //실제 토큰 만들어줌
     private String createToken(String userId, String role, Long expirationMillis) {
         Date now = new Date();
         Date expiresAt = new Date(now.getTime() + expirationMillis);
 
-        // subject에는 로컬 사용자 ID를 저장하고, role은 권한 확인용 claim으로 저장한다.
         return Jwts.builder()
                 .subject(userId)
                 .claim("role", role)

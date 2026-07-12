@@ -29,26 +29,24 @@ public class UserPreferences {
     @JoinColumn(name = "user_id")
     private Users user;
 
-    // 하드 코딩용 설문
+    // ?섎뱶 肄붾뵫???ㅻЦ
     @Column(name = "smoking_status", nullable = false)
     private Integer smokingStatus;
 
-    // 자기 소개
+    // ?먭린 ?뚭컻
     @Column(columnDefinition = "TEXT")
     private String introduce;
 
-    // 여러 설문
+    // ?щ윭 ?ㅻЦ
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "answers", columnDefinition = "jsonb", nullable = false)
     private SurveyAnswers answers;
 
-    // 사용자 개인화 항목(보고 싶은 3가지 항목)
     @Builder.Default
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "visible_profile_fields", columnDefinition = "jsonb")
     private List<SurveyAnswerField> visibleProfileFields = new ArrayList<>();
 
-    // 정규화 벡터
     @Builder.Default
     @Array(length = 9)
     @JdbcTypeCode(SqlTypes.VECTOR)
@@ -73,7 +71,6 @@ public class UserPreferences {
         this.lifestyleVector[8] = normalize(this.answers.getEatingInRoom(), 1, 3);
     }
 
-    // 벡터 정규화
     private float normalize(Integer value, int min, int max){
 
         if(value == null)   return 0.0f;
@@ -87,15 +84,12 @@ public class UserPreferences {
     }
 
 
-    // 메타
 
-    // 설문 완료 여부
     @Builder.Default
     @Column(name = "is_completed", nullable = false)
     private Boolean isCompleted = false;
 
 
-    // 매칭 성공 여부
     @Builder.Default
     @Column(name = "is_matched", nullable = false)
     private Boolean isMatched = false;

@@ -1,0 +1,147 @@
+package com.irummate.domain.user.service;
+
+import com.irummate.domain.user.dto.UserDetailsRequestDto;
+import com.irummate.domain.user.dto.UserDetailsResponseDto;
+import com.irummate.domain.user.dto.UserProfileResponseDto;
+import com.irummate.domain.user.dto.UserProfileUpdateRequestDto;
+import com.irummate.domain.user.dto.UserProfileUpdateResponseDto;
+import com.irummate.domain.user.entity.UserDetails;
+import com.irummate.domain.user.entity.Users;
+import com.irummate.domain.user.repository.UserDetailsRepository;
+import com.irummate.domain.user.repository.UsersRepository;
+import com.irummate.global.exception.BusinessException;
+import com.irummate.global.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @Service: ?�프링에�????�래?��? 비즈?�스 로직???�당?�는 '?�비?? 컴포?�트?�을 ?�립?�다.
+ * @RequiredArgsConstructor: final 변?�인 ??개의 ?�포지?�리(DB 창구)�??�동?�로 주입받습?�다.
+ * @Transactional(readOnly = true): ?�이?�베?�스�?'?�기 ?�용'?�로 ?�제?�니??
+ * ?�순 조회 ???�능????빨라지???�과가 ?�습?�다. (값을 바�? ?�만 메서???�에 ?�로 @Transactional??붙임)
+ */
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class UserDetailsService {
+
+
+    private final UsersRepository usersRepository;
+    private final UserDetailsRepository userDetailsRepository;
+
+    /**
+     * ??��: ?�용?�의 추�? ?�수 ?�보(본명, ?�번, ?�이 ??�?최초�??�?�합?�다.
+     * @Transactional: 값의 ?�정/?�성???�어?��?�? ?�중???�러가 ?�면 ?��? 취소?�도�??�전?�치�?�?��??
+     */
+    @Transactional
+    public UserDetailsResponseDto createDetails(Long userId, UserDetailsRequestDto request) {
+        Long userPk = Long.valueOf(userId);
+        // ?��? ?�세 ?�보가 ?�록???��??��? 검?�합?�다.
+        if (userDetailsRepository.existsById(userPk)) {
+            // ?��? 존재?�다�??�외(409 Conflict)�?발생?�킵?�다.
+            throw new BusinessException(ErrorCode.DETAILS_ALREADY_EXISTS);
+        }
+
+        // ?�큰?�서 꺼낸 userId가 ?�제�?가?�된 ?��??��? ?�인?�니??
+        Users user = usersRepository.findById(userPk)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)); // ?�으�?404 ?�러
+
+        //?�력받�? ?�이??Dto)�?바탕?�로 ?�제 DB ?�이�?모양?�의 객체(Entity)�?조립?�니??
+        UserDetails userDetails = UserDetails.builder()
+                .user(user)
+                .realName(request.getRealName())
+                .studentId(request.getStudentId())
+                .age(request.getAge())
+                .gender(request.getGender())
+                .department(request.getDepartment())
+                .phoneNumber(request.getPhoneNumber())
+                .build();
+
+        // [DB ?�?? 조립??객체�??�이?�베?�스???�??Insert)?�니??
+        UserDetails savedDetails = userDetailsRepository.save(userDetails);
+        user.promoteToUser();
+
+        return toResponse(savedDetails);
+    }
+
+    /**
+     * ?��? 본인???�합 ?�로???�보�?조회?�니??
+     */
+    public UserProfileResponseDto getProfile(Long userId) {
+        Long userPk = Long.valueOf(userId);
+        // 1. 기본 ?��? ?�보(?�메?? ?�네????�?DB?�서 찾습?�다.
+        Users user = usersRepository.findById(userPk)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 추�? ?�세 ?�보(?�번, ?�과 ????DB?�서 찾습?�다.
+        // ?�수 ?�보�??�직 ?�력 ???�을 ?�도 ?�으므�? ?�기???�러�??��? ?�고 'null'???�도�?.orElse(null) 처리�??�니??
+        UserDetails userDetails = userDetailsRepository.findById(userPk).orElse(null);
+
+        // 3. ???�이블에??긁어???�보�?(UserProfileResponseDto)???�쳐???�아 반환?�니??
+        return UserProfileResponseDto.builder()
+                .nickname(user.getNickname())
+                .email(user.getEmail())
+                .profileImageUrl(user.getProfileImageUrl())
+                .role(user.getRole().name())
+                .status(user.getStatus().name())
+                .detail(toProfileDetail(userDetails)) // ?�세 ?�보가 ?�으�??��???null�??��?
+                .build();
+    }
+
+    /**
+     * ??��: ?��????�로???�네?? ?�로???�진)???�정?�니??
+     * @Transactional: DB ???�이?�의 ?�제 변�?Update)???�어?��?�??�랜??��??�?��??
+     */
+    @Transactional
+    public UserProfileUpdateResponseDto updateProfile(Long userId, UserProfileUpdateRequestDto request) {
+        Long userPk = Long.valueOf(userId);
+        // 1. ?�정???��?�?DB?�서 찾습?�다.
+        Users user = usersRepository.findById(userPk)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. ?�티 체킹: ?�티??객체??값을 바꿔줍니??
+        // ?�프링�? ?�랜??�� ?�에??객체??값이 바뀌면, 메서?��? ?�날 ???�동?�로 DB??UPDATE 쿼리�??�려줍니??
+        user.updateProfile(request.getNickname(), request.getProfileImageUrl());
+
+        // 3. ?�정 ?�료??결과�?가방에 ?�아 ?�려줍니??
+        return UserProfileUpdateResponseDto.builder()
+                .nickname(user.getNickname())
+                .profileImageUrl(user.getProfileImageUrl())
+                .build();
+    }
+
+
+
+    /**
+     * ??��: DB??객체(UserDetails)�??�면 반환??가�?UserDetailsResponseDto)?�로 변?�해줍니??
+     */
+    private UserDetailsResponseDto toResponse(UserDetails userDetails) {
+        return UserDetailsResponseDto.builder()
+                .realName(userDetails.getRealName())
+                .studentId(userDetails.getStudentId())
+                .age(userDetails.getAge())
+                .gender(userDetails.getGender())
+                .department(userDetails.getDepartment())
+                .phoneNumber(userDetails.getPhoneNumber())
+                .build();
+    }
+
+    /**
+     * ??��: ?�로???�합 조회 ???��??????�어�??�세 ?�보 Dto�??�성??줍니?? (?�보가 ?�으�??�전?�게 null 반환)
+     */
+    private UserProfileResponseDto.Detail toProfileDetail(UserDetails userDetails) {
+        if (userDetails == null) {
+            return null;
+        }
+
+        return UserProfileResponseDto.Detail.builder()
+                .realName(userDetails.getRealName())
+                .studentId(userDetails.getStudentId())
+                .age(userDetails.getAge())
+                .gender(userDetails.getGender())
+                .department(userDetails.getDepartment())
+                .phoneNumber(userDetails.getPhoneNumber())
+                .build();
+    }
+}

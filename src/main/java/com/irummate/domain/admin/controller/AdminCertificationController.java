@@ -1,11 +1,11 @@
-package com.dormmatch.domain.admin.controller;
+package com.irummate.domain.admin.controller;
 
-import com.dormmatch.domain.admin.dto.AdminCertificationRejectRequestDto;
-import com.dormmatch.domain.admin.service.AdminCertificationService;
-import com.dormmatch.domain.certification.dto.CertificationResponseDto;
-import com.dormmatch.global.aop.AuthRole;
-import com.dormmatch.global.aop.RequiresAuth;
-import com.dormmatch.global.response.GlobalApiResponse;
+import com.irummate.domain.admin.dto.AdminCertificationRejectRequestDto;
+import com.irummate.domain.admin.service.AdminCertificationService;
+import com.irummate.domain.certification.dto.CertificationResponseDto;
+import com.irummate.global.aop.AuthRole;
+import com.irummate.global.aop.RequiresAuth;
+import com.irummate.global.response.GlobalApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

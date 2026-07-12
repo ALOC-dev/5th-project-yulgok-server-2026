@@ -1,6 +1,6 @@
-package com.dormmatch.domain.certification.dto;
+package com.irummate.domain.certification.dto;
 
-import com.dormmatch.domain.certification.entity.Certification;
+import com.irummate.domain.certification.entity.Certification;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

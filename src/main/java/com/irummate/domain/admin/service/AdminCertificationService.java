@@ -1,13 +1,13 @@
-package com.dormmatch.domain.admin.service;
+package com.irummate.domain.admin.service;
 
-import com.dormmatch.domain.admin.dto.AdminCertificationRejectRequestDto;
-import com.dormmatch.domain.certification.dto.CertificationResponseDto;
-import com.dormmatch.domain.certification.entity.Certification;
-import com.dormmatch.domain.certification.entity.CertificationStatus;
-import com.dormmatch.domain.certification.repository.CertificationRepository;
-import com.dormmatch.domain.user.entity.Users;
-import com.dormmatch.global.exception.BusinessException;
-import com.dormmatch.global.exception.ErrorCode;
+import com.irummate.domain.admin.dto.AdminCertificationRejectRequestDto;
+import com.irummate.domain.certification.dto.CertificationResponseDto;
+import com.irummate.domain.certification.entity.Certification;
+import com.irummate.domain.certification.entity.CertificationStatus;
+import com.irummate.domain.certification.repository.CertificationRepository;
+import com.irummate.domain.user.entity.Users;
+import com.irummate.global.exception.BusinessException;
+import com.irummate.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +44,6 @@ public class AdminCertificationService {
 
         certification.approve();
 
-        // 인증 승인 시 매칭/서비스 이용이 가능하도록 유저 상태도 함께 갱신한다.
         Users user = certification.getUser();
         user.activate();
         if (!user.isAdmin()) {
