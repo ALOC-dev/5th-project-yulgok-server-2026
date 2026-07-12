@@ -59,6 +59,7 @@ public class UserDetailsService {
 
         // [DB 저장] 조립된 객체를 데이터베이스에 저장(Insert)합니다.
         UserDetails savedDetails = userDetailsRepository.save(userDetails);
+        user.promoteToUser();
 
         return toResponse(savedDetails);
     }
@@ -81,8 +82,8 @@ public class UserDetailsService {
                 .nickname(user.getNickname())
                 .email(user.getEmail())
                 .profileImageUrl(user.getProfileImageUrl())
-                .role(user.getRole())
-                .status(user.getStatus())
+                .role(user.getRole().name())
+                .status(user.getStatus().name())
                 .detail(toProfileDetail(userDetails)) // 상세 정보가 없으면 내부는 null로 담김
                 .build();
     }

@@ -1,12 +1,10 @@
 package com.dormmatch.domain.user.entity;
 
 import com.dormmatch.domain.survey.entity.UserPreferences;
-import com.github.f4b6a3.ulid.UlidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -28,11 +26,14 @@ public class Users {
 
     private String profileImageUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role = "GUEST"; // GUEST, USER, ADMIN
+    private UserRole role = UserRole.GUEST;
 
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "PENDING"; // ACTIVE, PENDING, BANNED
+    private UserStatus status = UserStatus.PENDING;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -63,14 +64,18 @@ public class Users {
         this.email            = email;
         this.nickname         = nickname;
         this.profileImageUrl  = profileImageUrl;
-        this.role             = "GUEST";
-        this.status           = "PENDING";
+        this.role             = UserRole.GUEST;
+        this.status           = UserStatus.PENDING;
     }
 
-    public void activate()  { this.status = "ACTIVE"; }
-    public void ban()       { this.status = "BANNED"; }
-    public void unban()     { this.status = "ACTIVE"; }
-    public void promoteToUser() { this.role = "USER"; }
+    public void activate()  { this.status = UserStatus.ACTIVE; }
+    public void ban()       { this.status = UserStatus.BANNED; }
+    public void unban()     { this.status = UserStatus.ACTIVE; }
+    public void promoteToUser() { this.role = UserRole.USER; }
+
+    public boolean isAdmin() {
+        return this.role == UserRole.ADMIN;
+    }
 
 
     public void updateProfile(String nickname, String profileImageUrl){

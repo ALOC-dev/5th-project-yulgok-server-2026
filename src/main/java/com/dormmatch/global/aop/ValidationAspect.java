@@ -2,6 +2,7 @@ package com.dormmatch.global.aop;
 
 import com.dormmatch.domain.survey.entity.UserPreferences;
 import com.dormmatch.domain.survey.repository.UserPreferencesRepository;
+import com.dormmatch.domain.user.entity.UserStatus;
 import com.dormmatch.domain.user.entity.Users;
 import com.dormmatch.domain.user.repository.UsersRepository;
 import com.dormmatch.global.exception.BusinessException;
@@ -68,11 +69,15 @@ public class ValidationAspect {
         Users user = usersRepository.findById(userId)
                 .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+
         AuthRole[] authRole = requiresAuth.roles();
         if (authRole.length == 0) return;
 
         boolean hasRole = Arrays.stream(authRole)
-                .anyMatch(role -> role.name().equals(user.getRole()));
+                .anyMatch(role -> role.name().equals(user.getRole().name()));
 
         if (!hasRole) {
             log.warn("[AuthAspect] 권한 없음 - userId: {}, role: {}, required: {}",

@@ -33,6 +33,8 @@ public enum ErrorCode {
     NOT_CHAT_PARTICIPANT(HttpStatus.FORBIDDEN, "해당 채팅방의 참여자가 아닙니다."),
     NOT_MATCH_PARTICIPANT(HttpStatus.FORBIDDEN, "해당 매칭의 당사자가 아닙니다."),
     CHAT_ROOM_CLOSED(HttpStatus.FORBIDDEN, "상대방이 나가서 대화를 보낼 수 없는 채팅방입니다."),
+    ADMIN_CERTIFICATION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "관리자 계정은 인증 요청을 생성할 수 없습니다."),
+    USER_DETAILS_REQUIRED(HttpStatus.FORBIDDEN, "필수 정보 입력 후 인증 요청을 할 수 있습니다."),
 
     // ── 404 ──
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "유저를 찾을 수 없습니다."),

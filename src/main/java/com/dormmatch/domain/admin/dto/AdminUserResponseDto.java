@@ -24,8 +24,8 @@ public class AdminUserResponseDto {
                 user.getEmail(),
                 user.getNickname(),
                 user.getProfileImageUrl(),
-                user.getRole(),
-                user.getStatus(),
+                user.getRole().name(),
+                user.getStatus().name(),
                 user.getCreatedAt()
         );
     }

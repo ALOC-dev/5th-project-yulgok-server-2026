@@ -47,7 +47,9 @@ public class AdminCertificationService {
         // 인증 승인 시 매칭/서비스 이용이 가능하도록 유저 상태도 함께 갱신한다.
         Users user = certification.getUser();
         user.activate();
-        user.promoteToUser();
+        if (!user.isAdmin()) {
+            user.promoteToUser();
+        }
 
         return CertificationResponseDto.from(certification);
     }
