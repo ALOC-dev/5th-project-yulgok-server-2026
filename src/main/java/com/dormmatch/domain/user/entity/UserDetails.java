@@ -37,14 +37,18 @@ public class UserDetails {
     @Column(nullable = false)
     private String department;
 
+    @Column(name = "phone_number", nullable = false)
+    private String phoneNumber;
+
     @Builder
-    public UserDetails(Users user, String realName, String studentId, int age, String gender, String department){
+    public UserDetails(Users user, String realName, String studentId, int age, String gender, String department, String phoneNumber){
         this.user = user;
         this.realName = realName;
         this.studentId = studentId;
         this.age = age;
         this.gender = gender;
         this.department = department;
+        this.phoneNumber = phoneNumber;
     }
 
 

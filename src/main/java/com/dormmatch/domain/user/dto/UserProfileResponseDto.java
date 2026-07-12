@@ -22,5 +22,6 @@ public class UserProfileResponseDto {
         private final Integer age;
         private final String gender;
         private final String department;
+        private final String phoneNumber;
     }
 }
