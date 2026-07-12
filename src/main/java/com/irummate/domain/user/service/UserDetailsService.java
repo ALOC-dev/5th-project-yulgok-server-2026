@@ -55,6 +55,7 @@ public class UserDetailsService {
                 .age(request.getAge())
                 .gender(request.getGender())
                 .department(request.getDepartment())
+                .phoneNumber(request.getPhoneNumber())
                 .build();
 
         // [DB 저장] 조립된 객체를 데이터베이스에 저장(Insert)합니다.
@@ -121,6 +122,7 @@ public class UserDetailsService {
                 .age(userDetails.getAge())
                 .gender(userDetails.getGender())
                 .department(userDetails.getDepartment())
+                .phoneNumber(userDetails.getPhoneNumber())
                 .build();
     }
 
@@ -138,6 +140,7 @@ public class UserDetailsService {
                 .age(userDetails.getAge())
                 .gender(userDetails.getGender())
                 .department(userDetails.getDepartment())
+                .phoneNumber(userDetails.getPhoneNumber())
                 .build();
     }
 }
