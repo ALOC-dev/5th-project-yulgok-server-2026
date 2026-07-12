@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/users")
 public class UserDetailsController {
 
     private final UserDetailsService userDetailsService;
@@ -43,7 +43,7 @@ public class UserDetailsController {
     }
 
     /**
-     * [PATCH] /api/v1/users/me
+     * [PATCH] /api/users/me
      * 역할: 현재 로그인한 유저의 프로필(닉네임, 프로필 이미지)을 일부 수정합니다
      * @RequestBody: 클라이언트가 보낸 JSON 데이터를 자바 객체(Dto)로 변환해줍니다
      */
@@ -60,7 +60,7 @@ public class UserDetailsController {
     }
 
     /**
-     * [POST] /api/v1/users/details
+     * [POST] /api/users/details
      * 역할: 카카오 로그인 직후, 서비스 이용에 필요한 추가 필수 정보(본명, 학번, 나이, 성별, 학과)를 최초 등록합니다.
      */
     @PostMapping("/details")

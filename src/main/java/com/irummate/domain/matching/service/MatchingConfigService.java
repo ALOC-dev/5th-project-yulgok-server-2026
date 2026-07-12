@@ -1,5 +1,6 @@
 package com.irummate.domain.matching.service;
 
+import com.irummate.domain.matching.dto.MatchingConfigDto;
 import com.irummate.domain.matching.entity.MatchingConfig;
 import com.irummate.domain.matching.repository.MatchingConfigRepository;
 import com.irummate.global.exception.BusinessException;
@@ -22,22 +23,36 @@ public class MatchingConfigService {
 
 
     @Transactional
-    public void setMatchDate(LocalDate matchDate){
+    public void setMatchDate(LocalDate matchStartDate,
+                             LocalDate matchEndDate){
+
+        if (matchStartDate == null || matchEndDate == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "매칭 시작일과 종료일은 필수입니다.");
+        }
+
+        if (matchStartDate.isAfter(matchEndDate)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "매칭 시작일은 종료일보다 늦을 수 없습니다.");
+        }
 
         MatchingConfig config = matchingConfigRepository.findById(MatchingConfig.SINGLETON_ID)
-                .orElseGet(()->new MatchingConfig(matchDate));
+                .orElseGet(()->new MatchingConfig(matchStartDate, matchEndDate));
 
-        config.updateMatchDate(matchDate);
+        config.updateMatchStartDate(matchStartDate);
+        config.updateMatchEndDate(matchEndDate);
         matchingConfigRepository.save(config);
 
     }
 
     @Transactional(readOnly = true)
-    public LocalDate getMatchDate(){
+    public MatchingConfigDto getMatchDate(){
         MatchingConfig config = matchingConfigRepository.findById(MatchingConfig.SINGLETON_ID)
-                .orElseThrow(()->new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(()->new BusinessException(ErrorCode.MATCH_DATE_NOT_FOUND));
 
-        return config.getMatchDate();
+        MatchingConfigDto matchingConfigDto = new MatchingConfigDto();
+        matchingConfigDto.setMatchStartDate(config.getMatchStartDate());
+        matchingConfigDto.setMatchEndDate(config.getMatchEndDate());
+
+        return matchingConfigDto;
     }
 
 

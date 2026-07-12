@@ -1,6 +1,7 @@
 package com.irummate.domain.auth.controller;
 
 import com.irummate.domain.auth.dto.AuthStatusResponseDto;
+import com.irummate.domain.auth.dto.LoginResponseDto;
 import com.irummate.domain.auth.dto.RefreshTokenResponseDto;
 import com.irummate.domain.auth.service.AuthService;
 import com.irummate.global.exception.BusinessException;
@@ -23,13 +24,13 @@ import java.time.Duration;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
 
     /**
-     * [GET] /api/v1/auth/kakao/callback
+     * [GET] /api/auth/kakao/callback
      * 역할: 카카오가 로그인을 마친 사용자를 이 주소로 보내면서 일회용 티켓('code')을 던져줍니다.
      * 그 티켓을 받아 실제 회원가입/로그인 처리를 완료하고 토큰을 발급하는 핵심 API입니다.
      */
@@ -65,40 +66,28 @@ public class AuthController {
     }
 
     /**
-     * [POST] /api/v1/auth/refresh
+     * [POST] /api/auth/refresh
      * 역할: 로그인의 유효기간(Access Token 만료)이 다 되었을 때, 브라우저 쿠키에 숨겨둔
      * Refresh Token을 꺼내어 검증한 뒤 새로운 Access Token을 갱신(재발급)해 줍니다.
      */
     @PostMapping("/refresh")
     public ResponseEntity<GlobalApiResponse<RefreshTokenResponseDto>> refresh(
-            @RequestParam(value = "refreshToken", required = false) String refreshToken, // URL 파라미터로 들어올 경우를 대비
             HttpServletRequest request
     ) {
-        // 만약 주소창으로 토큰이 안 들어왔다면, 요청 헤더의 쿠키 보관함에서 직접 리프레시 토큰을 꺼내는 함수를 호출합니다.
+        String refreshToken = extractRefreshToken(request);
         if (refreshToken == null || refreshToken.isBlank()) {
-            refreshToken = extractRefreshToken(request);
-        }
-        // 쿠키에도 리프레시 토큰이 전혀 없다면 인증 실패(41) 에러를 뱉습니다.
-        if (refreshToken == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Refresh Token이 필요합니다.");
         }
 
-        // 서비스에게 리프레시 토큰을 주며 새 엑세스 토큰을 받아옵니다.
         RefreshTokenResponseDto response = authService.refreshAccessToken(refreshToken);
 
-        // 만약 리프레시 토큰마저 만료되었거나 썩은 토큰이라면 다시 로그인하라고 에러(401)를 던집니다.
         if (response == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Refresh Token이 만료되었거나 유효하지 않습니다.");
         }
 
-        // 정상적으로 새 Access Token이 나왔다면 프론트엔드에게 돌려줌
-        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "새 Access Toekn 발급 성공", response));
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "Access Token 재발급 성공", response));
     }
 
-    /**
-     * [POST] /api/v1/auth/logout
-     * 역할: 로그아웃 요청 시, 브라우저에 저장되어 있던 HttpOnly 쿠키(Refresh Token)를 강제로 만료시켜 무효화합니다.
-     */
     @PostMapping("/logout")
     public ResponseEntity<GlobalApiResponse<Void>> logout(HttpServletResponse response) {
         // 똑같은 이름의 쿠키를 만들되, 만료시간(maxAge)을 0으로 주어 브라우저가 즉시 삭제하게 만듭니다.

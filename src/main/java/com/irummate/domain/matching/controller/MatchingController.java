@@ -4,6 +4,7 @@ import com.irummate.domain.matching.dto.MatchConfirmRequestDto;
 import com.irummate.domain.matching.dto.MatchingRequestDto;
 import com.irummate.domain.matching.dto.MatchingResponseDto;
 import com.irummate.domain.matching.service.MatchingService;
+import com.irummate.global.aop.RequiresMatchDate;
 import com.irummate.global.aop.RequiresSurvey;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
@@ -64,6 +65,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "409", description = "이미 최종 매칭되었거나 오늘 이미 매칭 추천을 완료했습니다.")
     })
     @RequiresSurvey
+    @RequiresMatchDate
     @PostMapping("/match")
     public ResponseEntity<GlobalApiResponse<?>> match(
             @AuthenticationPrincipal Long userId
@@ -82,6 +84,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 하트 전달 또는 거절을 할 수 없습니다.")
     })
     @RequiresSurvey
+    @RequiresMatchDate
     @PatchMapping("/requests")
     public ResponseEntity<GlobalApiResponse<?>> sendHeartOrRejectToReceiver(
             @AuthenticationPrincipal Long userId,
@@ -111,13 +114,12 @@ public class MatchingController {
             @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 최종 확정을 할 수 없습니다.")
     })
     @RequiresSurvey
+    @RequiresMatchDate
     @PostMapping("/requests/confirm")
     public ResponseEntity<GlobalApiResponse<?>> sendConfirm(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody MatchConfirmRequestDto requestDto
     ){
-
-
         matchingService.confirm(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
         return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "매칭 확정 전달 성공", null));
     }

@@ -1,7 +1,10 @@
 package com.irummate.global.aop;
 
+import com.irummate.domain.matching.entity.MatchingConfig;
+import com.irummate.domain.matching.repository.MatchingConfigRepository;
 import com.irummate.domain.survey.entity.UserPreferences;
 import com.irummate.domain.survey.repository.UserPreferencesRepository;
+import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
@@ -12,6 +15,9 @@ import org.aspectj.lang.annotation.Before;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.util.Arrays;
+
 @Slf4j
 @Aspect
 @Component
@@ -19,12 +25,15 @@ public class ValidationAspect {
 
     private final UserPreferencesRepository userPreferencesRepository;
     private final UsersRepository usersRepository;
+    private final MatchingConfigRepository matchingConfigRepository;
 
     @Autowired
     public ValidationAspect(UserPreferencesRepository userPreferencesRepository,
-                            UsersRepository usersRepository){
+                            UsersRepository usersRepository,
+                            MatchingConfigRepository matchingConfigRepository){
         this.userPreferencesRepository = userPreferencesRepository;
         this.usersRepository = usersRepository;
+        this.matchingConfigRepository = matchingConfigRepository;
     }
 
     // survey가 완료된 상태인지 검증
@@ -50,6 +59,54 @@ public class ValidationAspect {
     public void checkCertification(JoinPoint joinPoint){
         Long userId = extractUserId(joinPoint);
 
+
+    }
+
+
+    // 관리자 인증
+    // @RequiresAuth
+    @Before("@annotation(requiresAuth)")
+    public void checkAuth(JoinPoint joinPoint, RequiresAuth requiresAuth){
+        Long userId = extractUserId(joinPoint);
+
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        AuthRole[] requiredRoles = requiresAuth.roles();
+
+        if(requiredRoles.length == 0){
+            return;
+        }
+
+        boolean hasRole = Arrays.stream(requiredRoles)
+                .anyMatch(role->role.name().equals(user.getRole()));
+
+        if(!hasRole){
+            boolean adminRequired = Arrays.stream(requiredRoles)
+                    .anyMatch(role -> role == AuthRole.ADMIN);
+
+            if (adminRequired) {
+                throw new BusinessException(ErrorCode.ADMIN_ONLY);
+            }
+
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+    }
+
+
+    // 매칭 날짜 검증
+    // @RequiresMatchDate
+    @Before("@annotation(com.irummate.global.aop.RequiresMatchDate)")
+    public void checkMatchDate(){
+
+        MatchingConfig matchingConfig = matchingConfigRepository.findById(MatchingConfig.SINGLETON_ID)
+                .orElseThrow(()->new BusinessException(ErrorCode.MATCH_DATE_NOT_FOUND));
+
+        LocalDate today = LocalDate.now();
+
+        if(today.isBefore(matchingConfig.getMatchStartDate()) || today.isAfter(matchingConfig.getMatchEndDate())){
+            throw new BusinessException(ErrorCode.MATCH_NOT_OPEN);
+        }
 
     }
 
