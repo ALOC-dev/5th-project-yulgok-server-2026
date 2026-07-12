@@ -26,11 +26,13 @@ public class Users {
 
     private String profileImageUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role = "GUEST"; // GUEST, USER, ADMIN
+    private UserRole role = UserRole.GUEST; // GUEST, USER, ADMIN
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "PENDING"; // ACTIVE, PENDING, BANNED
+    private UserStatus status = UserStatus.PENDING; // ACTIVE, PENDING, BANNED
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -61,13 +63,19 @@ public class Users {
         this.email            = email;
         this.nickname         = nickname;
         this.profileImageUrl  = profileImageUrl;
-        this.role             = "GUEST";
-        this.status           = "PENDING";
+        this.role             = UserRole.GUEST;
+        this.status           = UserStatus.PENDING;
     }
 
-    public void activate()  { this.status = "ACTIVE"; }
-    public void ban()       { this.status = "BANNED"; }
-    public void promoteToUser() { this.role = "USER"; }
+    public void activate()  { this.status = UserStatus.ACTIVE; }
+    public void ban()       { this.status = UserStatus.PENDING; }
+    public void unban()     { this.status = UserStatus.ACTIVE; }
+    public void promoteToUser() { this.role = UserRole.USER; }
+
+
+    public boolean isAdmin() {
+        return this.role == UserRole.ADMIN;
+    }
 
 
     public void updateProfile(String nickname, String profileImageUrl){

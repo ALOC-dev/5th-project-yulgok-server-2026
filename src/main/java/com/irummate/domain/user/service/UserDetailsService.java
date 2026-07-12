@@ -82,8 +82,8 @@ public class UserDetailsService {
                 .nickname(user.getNickname())
                 .email(user.getEmail())
                 .profileImageUrl(user.getProfileImageUrl())
-                .role(user.getRole())
-                .status(user.getStatus())
+                .role(user.getRole().name())
+                .status(user.getStatus().name())
                 .detail(toProfileDetail(userDetails)) // 상세 정보가 없으면 내부는 null로 담김
                 .build();
     }

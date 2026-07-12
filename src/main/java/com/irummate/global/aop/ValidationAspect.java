@@ -4,6 +4,7 @@ import com.irummate.domain.matching.entity.MatchingConfig;
 import com.irummate.domain.matching.repository.MatchingConfigRepository;
 import com.irummate.domain.survey.entity.UserPreferences;
 import com.irummate.domain.survey.repository.UserPreferencesRepository;
+import com.irummate.domain.user.entity.UserStatus;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
@@ -67,28 +68,28 @@ public class ValidationAspect {
     // @RequiresAuth
     @Before("@annotation(requiresAuth)")
     public void checkAuth(JoinPoint joinPoint, RequiresAuth requiresAuth){
+
         Long userId = extractUserId(joinPoint);
 
+        log.debug("[AuthAspect] userId: {}, method: {}",
+                userId, joinPoint.getSignature().getName());
+
         Users user = usersRepository.findById(userId)
-                .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        AuthRole[] requiredRoles = requiresAuth.roles();
-
-        if(requiredRoles.length == 0){
-            return;
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
-        boolean hasRole = Arrays.stream(requiredRoles)
-                .anyMatch(role->role.name().equals(user.getRole()));
+        AuthRole[] authRole = requiresAuth.roles();
+        if (authRole.length == 0) return;
 
-        if(!hasRole){
-            boolean adminRequired = Arrays.stream(requiredRoles)
-                    .anyMatch(role -> role == AuthRole.ADMIN);
+        boolean hasRole = Arrays.stream(authRole)
+                .anyMatch(role -> role.name().equals(user.getRole().name()));
 
-            if (adminRequired) {
-                throw new BusinessException(ErrorCode.ADMIN_ONLY);
-            }
-
+        if (!hasRole) {
+            log.warn("[AuthAspect] 권한 없음 - userId: {}, role: {}, required: {}",
+                    userId, user.getRole(), Arrays.toString(authRole));
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
     }

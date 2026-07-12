@@ -53,8 +53,8 @@ public class AuthService {
         Long internalUserId = user.getId();
         String encodedUserId = HashIdsUtils.encode(internalUserId);
 
-        String accessToken = jwtTokenProvider.createAccessToken(encodedUserId, user.getRole());
-        String refreshToken = jwtTokenProvider.createRefreshToken(encodedUserId, user.getRole());
+        String accessToken = jwtTokenProvider.createAccessToken(encodedUserId, user.getRole().name());
+        String refreshToken = jwtTokenProvider.createRefreshToken(encodedUserId, user.getRole().name());
 
         LoginResponseDto response = LoginResponseDto.builder()
                 .accessToken(accessToken)
@@ -62,8 +62,8 @@ public class AuthService {
                 .user(LoginResponseDto.UserInfo.builder()
                         .id(encodedUserId)
                         .nickname(user.getNickname())
-                        .role(user.getRole())
-                        .status(user.getStatus())
+                        .role(user.getRole().name())
+                        .status(user.getStatus().name())
                         .build())
                 .build();
 
@@ -84,7 +84,7 @@ public class AuthService {
             return null;
         }
 
-        String accessToken = jwtTokenProvider.createAccessToken(encodedUserId, user.getRole());
+        String accessToken = jwtTokenProvider.createAccessToken(encodedUserId, user.getRole().name());
 
         return RefreshTokenResponseDto.builder()
                 .accessToken(accessToken)
@@ -117,8 +117,8 @@ public class AuthService {
                 .user(AuthStatusResponseDto.UserInfo.builder()
                         .id(HashIdsUtils.encode(user.getId()))
                         .nickname(user.getNickname())
-                        .role(user.getRole())
-                        .status(user.getStatus())
+                        .role(user.getRole().name())
+                        .status(user.getStatus().name())
                         .certificationStatus(null)
                         .surveyCompleted(isSurveyCompleted(userId))
                         .build())
