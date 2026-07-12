@@ -71,7 +71,7 @@ public class GlobalExceptionController {
 
         return ResponseEntity
                 .status(httpStatus)
-                .body(GlobalApiResponse.error(httpStatus, errorCode.getMessage(), null));
+                .body(GlobalApiResponse.error(httpStatus, e.getMessage(), null));
 
     }
 
