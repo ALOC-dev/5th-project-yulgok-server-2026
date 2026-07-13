@@ -75,7 +75,8 @@ public class ChatService {
                             room.partnerProfileImageUrl(),
                             lastMessage == null ? null : lastMessage.lastMessage(),
                             lastMessage == null ? null : lastMessage.lastMessageTime(),
-                            unreadCount.intValue()
+                            unreadCount.intValue(),
+                            room.status()
                     );
                 })
                 .toList();
@@ -156,6 +157,13 @@ public class ChatService {
                                 .status(ChatRoomStatus.OPEN)
                                 .build()
                 ));
+    }
+
+    @Transactional
+    public void closeChatRoomByMatchRequestId(Long matchRequestId) {
+        // 최종 매칭이 확정되면 기존 대화는 조회만 가능하도록 채팅방을 닫는다.
+        chatRoomRepository.findByMatchRequestId(matchRequestId)
+                .ifPresent(ChatRoom::close);
     }
 
     private ChatRoom getChatRoom(Long roomId) {

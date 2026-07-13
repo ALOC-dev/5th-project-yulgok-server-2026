@@ -62,6 +62,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/webjars/**",
+                                "/websocket-chat-test.html",
+                                "/ws/chat/**",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
