@@ -1,0 +1,67 @@
+# ============================================================
+# irummate CI/CD — 빌드는 Actions, 서버는 이미지 pull만
+# 위치: 레포의 .github/workflows/deploy.yml
+#
+# 트리거: main에 push(=머지)될 때. 베타 기간에 feature-1 push마다
+#         배포하고 싶으면 branches를 [feature-1]로 바꾸면 됨.
+# 필요한 GitHub Secrets:
+#   EC2_HOST    = 탄력적 IP
+#   EC2_SSH_KEY = dormmatch-key.pem 파일 내용 전체
+# ============================================================
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # Actions 탭에서 수동 실행 버튼도 제공
+
+permissions:
+  contents: read
+  packages: write      # GHCR push 권한
+
+env:
+  IMAGE: ghcr.io/aloc-dev/irummate-server   # GHCR은 소문자만 허용
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build jar
+        run: |
+          chmod +x gradlew
+          ./gradlew bootJar
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}   # 자동 제공, 별도 설정 불필요
+
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/irummate-server
+            docker compose -f docker-compose.prod.yml pull app
+            docker compose -f docker-compose.prod.yml up -d
+            docker image prune -f

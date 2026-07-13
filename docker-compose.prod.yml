@@ -2,9 +2,7 @@
 # 실행: docker compose -f docker-compose.prod.yml up -d --build
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/aloc-dev/irummate-server:latest
     container_name: irummate-app
     restart: unless-stopped
     ports:
@@ -35,5 +33,12 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certbot-www:/var/www/certbot:ro
+      # HTTPS 전환 시 아래 주석 해제 (certbot 발급 후)
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - app
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -17,6 +17,7 @@ repositories {
 	mavenCentral()
 }
 
+
 dependencies {
 	// 기본 의존성
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -61,4 +62,8 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+jar {
+	enabled = false
 }
