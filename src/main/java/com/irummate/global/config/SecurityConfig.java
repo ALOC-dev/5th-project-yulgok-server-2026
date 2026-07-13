@@ -75,7 +75,8 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/error",                 // 에러 발생 시 리다이렉트되는 경로
                                 "/websocket-chat-test.html",
-                                "/ws/chat/**"
+                                "/ws/chat/**",
+                                "/ws/**"
                         ).permitAll()
 
                         // 그 외의 나머지 모든 요청(anyRequest)은
