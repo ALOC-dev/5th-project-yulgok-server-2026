@@ -14,6 +14,8 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -40,8 +42,8 @@ public class ValidationAspect {
     // survey가 완료된 상태인지 검증
     // @RequiresSurvey를 메서드 앞에 붙여서 사용
     @Before("@annotation(com.irummate.global.aop.RequiresSurvey)")
-    public void checkSurveyCompleted(JoinPoint joinPoint){
-        Long userId = extractUserId(joinPoint);
+    public void checkSurveyCompleted(){
+        Long userId = extractUserId();
 
         boolean surveyCompleted = userPreferencesRepository
                 .findByUserId(userId)
@@ -57,10 +59,15 @@ public class ValidationAspect {
     // 인증서 인증
     // @RequiresCertification
     @Before("@annotation(com.irummate.global.aop.RequiresCertification)")
-    public void checkCertification(JoinPoint joinPoint){
-        Long userId = extractUserId(joinPoint);
+    public void checkCertification(){
+        Long userId = extractUserId();
 
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        if(user.getStatus() != UserStatus.ACTIVE){
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
     }
 
 
@@ -69,7 +76,7 @@ public class ValidationAspect {
     @Before("@annotation(requiresAuth)")
     public void checkAuth(JoinPoint joinPoint, RequiresAuth requiresAuth){
 
-        Long userId = extractUserId(joinPoint);
+        Long userId = extractUserId();
 
         log.debug("[AuthAspect] userId: {}, method: {}",
                 userId, joinPoint.getSignature().getName());
@@ -112,12 +119,14 @@ public class ValidationAspect {
     }
 
     // 매개변수로 들어오는 userId 확인
-    public static Long extractUserId(JoinPoint joinPoint){
-        for(Object args : joinPoint.getArgs()) {
-            if (args instanceof Long) {
-                return (Long) args;
-            }
+    public static Long extractUserId(){
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if(authentication != null && authentication.getPrincipal() instanceof  Long userId){
+            return userId;
         }
-        throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+
+        throw new BusinessException(ErrorCode.UNAUTHORIZED);
     }
 }

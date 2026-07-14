@@ -14,6 +14,9 @@ import com.irummate.domain.chat.entity.ChatRoom;
 import com.irummate.domain.chat.entity.ChatRoomStatus;
 import com.irummate.domain.chat.repository.ChatMessageRepository;
 import com.irummate.domain.chat.repository.ChatRoomRepository;
+import com.irummate.domain.user.entity.UserStatus;
+import com.irummate.domain.user.entity.Users;
+import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,11 +37,14 @@ public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final UsersRepository usersRepository;
 
     public ChatService(ChatRoomRepository chatRoomRepository,
-                       ChatMessageRepository chatMessageRepository) {
+                       ChatMessageRepository chatMessageRepository,
+                       UsersRepository usersRepository) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatMessageRepository = chatMessageRepository;
+        this.usersRepository = usersRepository;
     }
 
     @Transactional(readOnly = true)
@@ -135,6 +141,7 @@ public class ChatService {
     @Transactional
     public ChatMessageResponseDto sendMessage(Long roomId, Long senderId, String message) {
         ChatRoom chatRoom = getChatRoom(roomId);
+        validateCertifiedUser(senderId);
         validateSendable(chatRoom, senderId, message);
         validateRoomParticipant(roomId, senderId);
 
@@ -225,6 +232,15 @@ public class ChatService {
         } catch (DataIntegrityViolationException e) {
             return chatRoomRepository.findByMatchRequestId(matchRequestId)
                     .orElseThrow(() -> e);
+        }
+    }
+
+    private void validateCertifiedUser(Long userId) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
         }
     }
 }
