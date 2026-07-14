@@ -1,6 +1,6 @@
 package com.irummate.global.s3;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.time.Duration;
 
 @Component
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class S3Utils {
 
     private static final Duration PRESIGNED_URL_DURATION = Duration.ofMinutes(5);
