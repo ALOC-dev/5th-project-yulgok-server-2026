@@ -70,7 +70,8 @@ public class MatchingService {
             if(myMatchRequest.isConfirmed()){
                 myMatchRequest.getUserHighPreferences().updateIsMatched();
                 myMatchRequest.getUserLowPreferences().updateIsMatched();
-                chatService.closeChatRoomByMatchRequestId(myMatchRequest.getId());
+                chatService.closeChatRoomsByUserId(userId);
+                chatService.closeChatRoomsByUserId(receiverId);
 
                 closeOtherMatchRequests(userId, myMatchRequest);
                 closeOtherMatchRequests(receiverId, myMatchRequest);
@@ -159,7 +160,6 @@ public class MatchingService {
         List<MatchingResponseDto> matchingResponseDtos = new ArrayList<>();
 
         for(MatchRequests matchRequest : myMatchRequests){
-            // 상대방 추출
             Users other = matchRequest.getUserHigh().getId().equals(userId)
                     ? matchRequest.getUserLow()
                     : matchRequest.getUserHigh();

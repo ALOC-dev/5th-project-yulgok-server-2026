@@ -1,6 +1,7 @@
 package com.irummate.domain.chat.dto;
 
 import com.irummate.domain.chat.entity.ChatMessage;
+import com.irummate.global.util.HashIdsUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 public class ChatMessageResponseDto {
 
     private Long messageId;
-    private Long senderId;
+    private String senderId;
     private String message;
     private LocalDateTime createdAt;
     private Boolean isRead;
@@ -19,7 +20,7 @@ public class ChatMessageResponseDto {
     public static ChatMessageResponseDto from(ChatMessage chatMessage) {
         return new ChatMessageResponseDto(
                 chatMessage.getId(),
-                chatMessage.getSenderId(),
+                HashIdsUtils.encode(chatMessage.getSenderId()),
                 chatMessage.getMessage(),
                 chatMessage.getCreatedAt(),
                 chatMessage.getIsRead()
