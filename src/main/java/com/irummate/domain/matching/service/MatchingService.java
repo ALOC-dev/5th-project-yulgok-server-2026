@@ -70,7 +70,8 @@ public class MatchingService {
             if(myMatchRequest.isConfirmed()){
                 myMatchRequest.getUserHighPreferences().updateIsMatched();
                 myMatchRequest.getUserLowPreferences().updateIsMatched();
-                chatService.closeChatRoomByMatchRequestId(myMatchRequest.getId());
+                chatService.closeChatRoomsByUserId(userId);
+                chatService.closeChatRoomsByUserId(receiverId);
 
                 closeOtherMatchRequests(userId, myMatchRequest);
                 closeOtherMatchRequests(receiverId, myMatchRequest);

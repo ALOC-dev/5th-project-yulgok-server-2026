@@ -16,6 +16,7 @@ import com.irummate.domain.chat.repository.ChatMessageRepository;
 import com.irummate.domain.chat.repository.ChatRoomRepository;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
+
+    private static final int MIN_MESSAGE_PAGE_SIZE = 1;
+    private static final int MAX_MESSAGE_PAGE_SIZE = 100;
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
@@ -88,6 +92,7 @@ public class ChatService {
     public ChatMessagesResponseDto getMessages(Long roomId, Long userId, Long cursor, int size) {
         validateRoomExists(roomId);
         validateRoomParticipant(roomId, userId);
+        validateMessagePageSize(size);
 
         // size + 1개를 조회해서 다음 페이지가 있는지 판단한다.
         PageRequest pageRequest = PageRequest.of(0, size + 1);
@@ -151,12 +156,7 @@ public class ChatService {
     public ChatRoom createChatRoomIfNotExists(Long matchRequestId) {
         // 상호 HEART 상태가 되었을 때 matchRequestId 기준으로 채팅방을 한 번만 생성한다.
         return chatRoomRepository.findByMatchRequestId(matchRequestId)
-                .orElseGet(() -> chatRoomRepository.save(
-                        ChatRoom.builder()
-                                .matchRequestId(matchRequestId)
-                                .status(ChatRoomStatus.OPEN)
-                                .build()
-                ));
+                .orElseGet(() -> saveChatRoomOrFindExisting(matchRequestId));
     }
 
     @Transactional
@@ -164,6 +164,13 @@ public class ChatService {
         // 최종 매칭이 확정되면 기존 대화는 조회만 가능하도록 채팅방을 닫는다.
         chatRoomRepository.findByMatchRequestId(matchRequestId)
                 .ifPresent(ChatRoom::close);
+    }
+
+    @Transactional
+    public void closeChatRoomsByUserId(Long userId) {
+        List<ChatRoom> chatRooms = chatRoomRepository.findAllByParticipantId(userId);
+
+        chatRooms.forEach(ChatRoom::close);
     }
 
     private ChatRoom getChatRoom(Long roomId) {
@@ -183,6 +190,12 @@ public class ChatService {
         }
     }
 
+    private void validateMessagePageSize(int size) {
+        if (size < MIN_MESSAGE_PAGE_SIZE || size > MAX_MESSAGE_PAGE_SIZE) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+    }
+
     private void validateSendable(ChatRoom chatRoom, Long senderId, String message) {
         if (chatRoom.isClosed()) {
             throw new BusinessException(ErrorCode.CHAT_ROOM_CLOSED);
@@ -198,6 +211,20 @@ public class ChatService {
 
         if (message.length() > 500) {
             throw new BusinessException(ErrorCode.CHAT_MESSAGE_TOO_LONG);
+        }
+    }
+
+    private ChatRoom saveChatRoomOrFindExisting(Long matchRequestId) {
+        try {
+            return chatRoomRepository.saveAndFlush(
+                    ChatRoom.builder()
+                            .matchRequestId(matchRequestId)
+                            .status(ChatRoomStatus.OPEN)
+                            .build()
+            );
+        } catch (DataIntegrityViolationException e) {
+            return chatRoomRepository.findByMatchRequestId(matchRequestId)
+                    .orElseThrow(() -> e);
         }
     }
 }

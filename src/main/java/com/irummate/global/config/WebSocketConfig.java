@@ -1,5 +1,6 @@
 package com.irummate.global.config;
 
+import com.irummate.domain.chat.repository.ChatRoomRepository;
 import com.irummate.global.jwt.JwtTokenProvider;
 import com.irummate.global.jwt.WebSocketPrincipal;
 import com.irummate.global.util.HashIdsUtils;
@@ -17,16 +18,23 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import java.security.Principal;
+
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final String ROOM_TOPIC_PREFIX = "/topic/room/";
+    private static final String USER_QUEUE_PREFIX = "/queue/user/";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final ChatRoomRepository chatRoomRepository;
 
-    public WebSocketConfig(JwtTokenProvider jwtTokenProvider) {
+    public WebSocketConfig(JwtTokenProvider jwtTokenProvider,
+                           ChatRoomRepository chatRoomRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.chatRoomRepository = chatRoomRepository;
     }
 
     @Override
@@ -75,9 +83,54 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     accessor.setUser(new WebSocketPrincipal(userId));
                 }
 
+                if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
+                    validateSubscribe(accessor);
+                }
+
                 return message;
             }
         });
+    }
+
+    private void validateSubscribe(StompHeaderAccessor accessor) {
+        Long userId = resolveUserId(accessor.getUser());
+        String destination = accessor.getDestination();
+
+        if (destination == null) {
+            return;
+        }
+
+        if (destination.startsWith(ROOM_TOPIC_PREFIX)) {
+            Long roomId = parseDestinationId(destination, ROOM_TOPIC_PREFIX);
+
+            if (!chatRoomRepository.existsByRoomIdAndParticipantId(roomId, userId)) {
+                throw new IllegalArgumentException("구독 권한이 없는 채팅방입니다.");
+            }
+        }
+
+        if (destination.startsWith(USER_QUEUE_PREFIX)) {
+            Long destinationUserId = parseDestinationId(destination, USER_QUEUE_PREFIX);
+
+            if (!destinationUserId.equals(userId)) {
+                throw new IllegalArgumentException("구독 권한이 없는 개인 알림입니다.");
+            }
+        }
+    }
+
+    private Long resolveUserId(Principal principal) {
+        if (principal instanceof WebSocketPrincipal webSocketPrincipal) {
+            return webSocketPrincipal.getUserId();
+        }
+
+        throw new IllegalArgumentException("웹소켓 인증에 실패했습니다.");
+    }
+
+    private Long parseDestinationId(String destination, String prefix) {
+        try {
+            return Long.valueOf(destination.substring(prefix.length()));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("잘못된 구독 주소입니다.");
+        }
     }
 
     private String resolveToken(StompHeaderAccessor accessor) {
