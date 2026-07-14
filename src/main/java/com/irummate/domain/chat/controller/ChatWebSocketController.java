@@ -6,6 +6,7 @@ import com.irummate.domain.chat.service.ChatService;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
 import com.irummate.global.jwt.WebSocketPrincipal;
+import com.irummate.global.util.HashIdsUtils;
 import jakarta.validation.Valid;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -43,9 +44,10 @@ public class ChatWebSocketController {
         );
 
         Long partnerId = chatService.getPartnerId(roomId, senderId);
+        String encodedPartnerId = HashIdsUtils.encode(partnerId);
 
         messagingTemplate.convertAndSend("/topic/room/" + roomId, responseDto);
-        messagingTemplate.convertAndSend("/queue/user/" + partnerId, responseDto);
+        messagingTemplate.convertAndSend("/queue/user/" + encodedPartnerId, responseDto);
     }
 
     private Long resolveSenderId(Principal principal) {

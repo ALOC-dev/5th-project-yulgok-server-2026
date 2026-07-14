@@ -109,7 +109,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         }
 
         if (destination.startsWith(USER_QUEUE_PREFIX)) {
-            Long destinationUserId = parseDestinationId(destination, USER_QUEUE_PREFIX);
+            Long destinationUserId = parseHashedDestinationUserId(destination);
 
             if (!destinationUserId.equals(userId)) {
                 throw new IllegalArgumentException("구독 권한이 없는 개인 알림입니다.");
@@ -129,6 +129,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         try {
             return Long.valueOf(destination.substring(prefix.length()));
         } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("잘못된 구독 주소입니다.");
+        }
+    }
+
+    private Long parseHashedDestinationUserId(String destination) {
+        try {
+            return HashIdsUtils.decode(destination.substring(USER_QUEUE_PREFIX.length()));
+        } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("잘못된 구독 주소입니다.");
         }
     }
