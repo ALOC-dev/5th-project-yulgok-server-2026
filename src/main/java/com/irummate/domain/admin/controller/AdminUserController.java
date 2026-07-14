@@ -36,7 +36,7 @@ public class AdminUserController {
     @PatchMapping("/{userId}/ban")
     @RequiresAuth(roles = AuthRole.ADMIN)
     public ResponseEntity<GlobalApiResponse<AdminUserResponseDto>> banUser(
-            @PathVariable Long userId
+            @PathVariable String userId
     ) {
         AdminUserResponseDto responseDto = adminUserService.banUser(userId);
 
@@ -48,7 +48,7 @@ public class AdminUserController {
     @PatchMapping("/{userId}/unban")
     @RequiresAuth(roles = AuthRole.ADMIN)
     public ResponseEntity<GlobalApiResponse<AdminUserResponseDto>> unbanUser(
-            @PathVariable Long userId
+            @PathVariable String userId
     ) {
         AdminUserResponseDto responseDto = adminUserService.unbanUser(userId);
 

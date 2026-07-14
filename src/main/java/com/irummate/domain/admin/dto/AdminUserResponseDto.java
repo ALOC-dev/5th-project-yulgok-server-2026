@@ -1,6 +1,7 @@
 package com.irummate.domain.admin.dto;
 
 import com.irummate.domain.user.entity.Users;
+import com.irummate.global.util.HashIdsUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AdminUserResponseDto {
 
-    private Long userId;
+    private String userId;
     private String email;
     private String nickname;
     private String profileImageUrl;
@@ -20,7 +21,7 @@ public class AdminUserResponseDto {
 
     public static AdminUserResponseDto from(Users user) {
         return new AdminUserResponseDto(
-                user.getId(),
+                HashIdsUtils.encode(user.getId()),
                 user.getEmail(),
                 user.getNickname(),
                 user.getProfileImageUrl(),
