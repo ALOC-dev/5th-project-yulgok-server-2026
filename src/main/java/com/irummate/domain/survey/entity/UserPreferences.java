@@ -9,6 +9,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,7 +59,7 @@ public class UserPreferences {
     @PreUpdate
     public void onUpdate() {
         convertToNormalizedVector();
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 
     private void convertToNormalizedVector() {
@@ -112,11 +113,11 @@ public class UserPreferences {
     @PrePersist
     public void onCreate() {
         convertToNormalizedVector();
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        this.updatedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 
-    public void updateIsRerolled() {this.rerolledAt = LocalDateTime.now();}
+    public void updateIsRerolled() {this.rerolledAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));}
 
     public void updateIsMatched() {
         this.isMatched = true;

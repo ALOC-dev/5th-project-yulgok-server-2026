@@ -6,11 +6,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-public class DormMatchApplication {
+public class IrummateApplication {
 
 	public static void main(String[] args) {
 
-		SpringApplication.run(DormMatchApplication.class, args);
+		SpringApplication.run(IrummateApplication.class, args);
 	}
 
 }

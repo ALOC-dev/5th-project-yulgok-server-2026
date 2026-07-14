@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -238,8 +239,10 @@ public class MatchingService {
             throw new BusinessException(ErrorCode.ALREADY_CONFIRMED);
         }
 
-        LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
-        LocalDateTime startOfTomorrow = LocalDate.now().plusDays(1).atStartOfDay();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
+        LocalDateTime startOfToday = today.atStartOfDay();
+        LocalDateTime startOfTomorrow = today.plusDays(1).atStartOfDay();
 
         LocalDateTime myRerolledAt = me.getUserPreferences().getRerolledAt();
 

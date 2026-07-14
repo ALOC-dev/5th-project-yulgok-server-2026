@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Arrays;
 
 @Slf4j
@@ -110,7 +111,7 @@ public class ValidationAspect {
         MatchingConfig matchingConfig = matchingConfigRepository.findById(MatchingConfig.SINGLETON_ID)
                 .orElseThrow(()->new BusinessException(ErrorCode.MATCH_DATE_NOT_FOUND));
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         if(today.isBefore(matchingConfig.getMatchStartDate()) || today.isAfter(matchingConfig.getMatchEndDate())){
             throw new BusinessException(ErrorCode.MATCH_NOT_OPEN);

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Getter
@@ -58,7 +59,7 @@ public class MatchRequests {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 
 
@@ -76,7 +77,7 @@ public class MatchRequests {
         if (userLow.getId().equals(userId)) {
             this.userLowStatus = status;
             if (status == MatchStatus.RECOMMENDED) {
-                this.userLowRecommendedAt = LocalDateTime.now();
+                this.userLowRecommendedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
             }
             return;
         }
@@ -84,7 +85,7 @@ public class MatchRequests {
         if (userHigh.getId().equals(userId)) {
             this.userHighStatus = status;
             if (status == MatchStatus.RECOMMENDED) {
-                this.userHighRecommendedAt = LocalDateTime.now();
+                this.userHighRecommendedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
             }
             return;
         }
