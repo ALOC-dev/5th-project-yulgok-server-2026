@@ -20,6 +20,7 @@ import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
+import com.irummate.global.util.HashIdsUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -39,13 +40,16 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UsersRepository usersRepository;
+    private final HashIdsUtils hashIdsUtils;
 
     public ChatService(ChatRoomRepository chatRoomRepository,
                        ChatMessageRepository chatMessageRepository,
-                       UsersRepository usersRepository) {
+                       UsersRepository usersRepository,
+                       HashIdsUtils hashIdsUtils) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.usersRepository = usersRepository;
+        this.hashIdsUtils = hashIdsUtils;
     }
 
     @Transactional(readOnly = true)
@@ -112,7 +116,10 @@ public class ChatService {
 
         List<ChatMessageResponseDto> responseMessages = messages.stream()
                 .limit(size)
-                .map(ChatMessageResponseDto::from)
+                .map(chatMessage -> ChatMessageResponseDto.from(
+                        chatMessage,
+                        hashIdsUtils.encode(chatMessage.getSenderId())
+                ))
                 .toList();
 
         return new ChatMessagesResponseDto(responseMessages, hasNext);
@@ -175,7 +182,7 @@ public class ChatService {
         ChatMessage chatMessage = ChatMessage.create(roomId, senderId, message.trim());
         ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
 
-        return ChatMessageResponseDto.from(savedMessage);
+        return ChatMessageResponseDto.from(savedMessage, hashIdsUtils.encode(senderId));
     }
 
     @Transactional(readOnly = true)

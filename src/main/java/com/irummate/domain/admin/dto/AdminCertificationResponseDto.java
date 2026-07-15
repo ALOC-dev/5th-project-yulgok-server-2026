@@ -18,10 +18,12 @@ public class AdminCertificationResponseDto {
     private String adminComment;
     private LocalDateTime createdAt;
 
-    public static AdminCertificationResponseDto from(Certification certification) {
+    public static AdminCertificationResponseDto from(Certification certification,
+                                                     String certificationId,
+                                                     String userId) {
         return new AdminCertificationResponseDto(
-                HashIdsUtils.encode(certification.getId()),
-                HashIdsUtils.encode(certification.getUser().getId()),
+                certificationId,
+                userId,
                 certification.getImageKey(),
                 certification.getCertificationStatus().name(),
                 certification.getAdminComment(),

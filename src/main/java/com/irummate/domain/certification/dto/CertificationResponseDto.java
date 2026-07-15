@@ -18,9 +18,9 @@ public class CertificationResponseDto {
     private final String adminComment;
     private final LocalDateTime createdAt;
 
-    public static CertificationResponseDto from(Certification certification, String encodedUserId) {
+    public static CertificationResponseDto from(Certification certification, String encodedUserId, String certificationId) {
         return CertificationResponseDto.builder()
-                .certificationId(com.irummate.global.util.HashIdsUtils.encode(certification.getId()))
+                .certificationId(certificationId)
                 .userId(encodedUserId)
                 .semester(certification.getSemester())
                 .imageKey(certification.getImageKey())

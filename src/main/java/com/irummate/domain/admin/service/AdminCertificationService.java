@@ -2,7 +2,6 @@ package com.irummate.domain.admin.service;
 
 import com.irummate.domain.admin.dto.AdminCertificationRejectRequestDto;
 import com.irummate.domain.admin.dto.AdminCertificationResponseDto;
-import com.irummate.domain.certification.dto.CertificationResponseDto;
 import com.irummate.domain.certification.entity.Certification;
 import com.irummate.domain.certification.entity.CertificationStatus;
 import com.irummate.domain.certification.repository.CertificationRepository;
@@ -23,6 +22,7 @@ import java.util.List;
 public class AdminCertificationService {
 
     private final CertificationRepository certificationRepository;
+    private final HashIdsUtils hashIdsUtils;
 
     public List<AdminCertificationResponseDto> getCertifications(CertificationStatus status, int page) {
         Page<Certification> certifications = (status == null)
@@ -30,14 +30,14 @@ public class AdminCertificationService {
                 : certificationRepository.findAllByCertificationStatusOrderByCreatedAtDesc(status, PageRequest.of(page, 15));
 
         return certifications.getContent().stream()
-                .map(AdminCertificationResponseDto::from)
+                .map(this::toAdminCertificationResponseDto)
                 .toList();
 
     }
 
     public AdminCertificationResponseDto getCertification(String certificationId) {
         Certification certification = getCertificationEntity(certificationId);
-        return AdminCertificationResponseDto.from(certification);
+        return AdminCertificationResponseDto.from(certification, certificationId,hashIdsUtils.encode(certification.getUser().getId()));
     }
 
     @Transactional
@@ -47,7 +47,7 @@ public class AdminCertificationService {
 
         certification.approve(null);
 
-        return AdminCertificationResponseDto.from(certification);
+        return AdminCertificationResponseDto.from(certification, certificationId, hashIdsUtils.encode(certification.getUser().getId()));
     }
 
     @Transactional
@@ -57,13 +57,13 @@ public class AdminCertificationService {
 
         certification.reject(requestDto.getAdminComment());
 
-        return AdminCertificationResponseDto.from(certification);
+        return AdminCertificationResponseDto.from(certification, certificationId,hashIdsUtils.encode(certification.getUser().getId()));
     }
 
     private Certification getCertificationEntity(String certificationId) {
         Long decodedCertificationId;
         try {
-            decodedCertificationId = HashIdsUtils.decode(certificationId);
+            decodedCertificationId = hashIdsUtils.decode(certificationId);
         } catch (IllegalArgumentException e) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
@@ -76,5 +76,13 @@ public class AdminCertificationService {
         if (certification.getCertificationStatus() != CertificationStatus.REQUESTED) {
             throw new BusinessException(ErrorCode.CERTIFICATION_ALREADY_PROCESSED);
         }
+    }
+
+    private AdminCertificationResponseDto toAdminCertificationResponseDto(Certification certification) {
+        return AdminCertificationResponseDto.from(
+                certification,
+                hashIdsUtils.encode(certification.getId()),
+                hashIdsUtils.encode(certification.getUser().getId())
+        );
     }
 }

@@ -42,6 +42,7 @@ public class AuthService {
     private final UsersRepository usersRepository;
     private final UserPreferencesRepository userPreferencesRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final HashIdsUtils hashIdsUtils;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -53,7 +54,7 @@ public class AuthService {
         UserRegistration userRegistration = findOrCreateUser(userInfo);
         Users user = userRegistration.user();
         Long internalUserId = user.getId();
-        String encodedUserId = HashIdsUtils.encode(internalUserId);
+        String encodedUserId = hashIdsUtils.encode(internalUserId);
 
         String accessToken = jwtTokenProvider.createAccessToken(encodedUserId, user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(encodedUserId, user.getRole().name());
@@ -79,7 +80,7 @@ public class AuthService {
 
         Claims claims = jwtTokenProvider.parseClaims(refreshToken);
         String encodedUserId = claims.getSubject();
-        Long internalUserId = HashIdsUtils.decode(encodedUserId);
+        Long internalUserId = hashIdsUtils.decode(encodedUserId);
 
         Users user = usersRepository.findById(Long.valueOf(internalUserId)).orElse(null);
         if (user == null) {
@@ -117,7 +118,7 @@ public class AuthService {
         return AuthStatusResponseDto.builder()
                 .authenticated(true)
                 .user(AuthStatusResponseDto.UserInfo.builder()
-                        .id(HashIdsUtils.encode(user.getId()))
+                        .id(hashIdsUtils.encode(user.getId()))
                         .nickname(user.getNickname())
                         .role(user.getRole().name())
                         .status(user.getStatus().name())

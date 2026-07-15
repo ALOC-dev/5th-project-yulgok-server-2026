@@ -17,10 +17,10 @@ public class ChatMessageResponseDto {
     private LocalDateTime createdAt;
     private Boolean isRead;
 
-    public static ChatMessageResponseDto from(ChatMessage chatMessage) {
+    public static ChatMessageResponseDto from(ChatMessage chatMessage, String senderId) {
         return new ChatMessageResponseDto(
                 chatMessage.getId(),
-                HashIdsUtils.encode(chatMessage.getSenderId()),
+                senderId,
                 chatMessage.getMessage(),
                 chatMessage.getCreatedAt(),
                 chatMessage.getIsRead()

@@ -30,11 +30,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final ChatRoomRepository chatRoomRepository;
+    private final HashIdsUtils hashIdsUtils;
 
     public WebSocketConfig(JwtTokenProvider jwtTokenProvider,
-                           ChatRoomRepository chatRoomRepository) {
+                           ChatRoomRepository chatRoomRepository,
+                           HashIdsUtils hashIdsUtils) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.chatRoomRepository = chatRoomRepository;
+        this.hashIdsUtils = hashIdsUtils;
     }
 
     @Override
@@ -79,7 +82,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     }
 
                     Claims claims = jwtTokenProvider.parseClaims(token);
-                    Long userId = HashIdsUtils.decode(claims.getSubject());
+                    Long userId = hashIdsUtils.decode(claims.getSubject());
                     accessor.setUser(new WebSocketPrincipal(userId));
                 }
 
@@ -135,7 +138,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private Long parseHashedDestinationUserId(String destination) {
         try {
-            return HashIdsUtils.decode(destination.substring(USER_QUEUE_PREFIX.length()));
+            return hashIdsUtils.decode(destination.substring(USER_QUEUE_PREFIX.length()));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("잘못된 구독 주소입니다.");
         }

@@ -1,23 +1,28 @@
 package com.irummate.global.util;
 
 import org.hashids.Hashids;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-public final class HashIdsUtils {
+@Component
+public class HashIdsUtils {
 
-    private static final Hashids HASHIDS = new Hashids("dormmatch-user-id", 8);
+    private final Hashids hashids;
 
-    private HashIdsUtils() {
+    public HashIdsUtils(@Value("${hashids.salt}") String salt,
+                         @Value("${hashids.minlength}") int length) {
+        this.hashids = new Hashids(salt, length);
     }
 
-    public static String encode(Long id) {
+    public String encode(Long id) {
         if (id == null) {
             return null;
         }
 
-        return HASHIDS.encode(id);
+        return hashids.encode(id);
     }
 
-    public static Long decode(String hashId) {
+    public Long decode(String hashId) {
         if (hashId == null || hashId.isBlank()) {
             throw new IllegalArgumentException("Hashids value must not be blank.");
         }
@@ -26,7 +31,7 @@ public final class HashIdsUtils {
             return Long.valueOf(hashId);
         }
 
-        long[] decoded = HASHIDS.decode(hashId);
+        long[] decoded = hashids.decode(hashId);
         if (decoded.length == 0) {
             throw new IllegalArgumentException("Invalid Hashids value.");
         }

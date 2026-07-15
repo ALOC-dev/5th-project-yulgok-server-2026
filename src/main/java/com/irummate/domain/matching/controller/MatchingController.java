@@ -28,10 +28,13 @@ public class MatchingController {
 
 
     private final MatchingService matchingService;
+    private final HashIdsUtils hashIdsUtils;
 
     @Autowired
-    public MatchingController(MatchingService matchingService){
+    public MatchingController(MatchingService matchingService,
+                              HashIdsUtils hashIdsUtils){
         this.matchingService = matchingService;
+        this.hashIdsUtils = hashIdsUtils;
     }
 
 
@@ -96,12 +99,12 @@ public class MatchingController {
     ){
 
         if(requestDto.getMatchStatus().equals("REJECT")){
-            matchingService.reject(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
+            matchingService.reject(userId, hashIdsUtils.decode(requestDto.getReceiverId()));
             return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK,"하트 거절 성공",null));
         }
 
         if(requestDto.getMatchStatus().equals("HEART")){
-            matchingService.heart(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
+            matchingService.heart(userId, hashIdsUtils.decode(requestDto.getReceiverId()));
             return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "하트 전달 성공", null));
         }
 
@@ -125,7 +128,7 @@ public class MatchingController {
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody MatchConfirmRequestDto requestDto
     ){
-        matchingService.confirm(userId, HashIdsUtils.decode(requestDto.getReceiverId()));
+        matchingService.confirm(userId, hashIdsUtils.decode(requestDto.getReceiverId()));
         return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "매칭 확정 전달 성공", null));
     }
 

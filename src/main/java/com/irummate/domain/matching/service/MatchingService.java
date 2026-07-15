@@ -37,16 +37,20 @@ public class MatchingService {
     private final UserPreferencesRepository userPreferencesRepository;
     private final UsersRepository usersRepository;
     private final ChatService chatService;
+    private final HashIdsUtils hashIdsUtils;
+
 
     @Autowired
     public MatchingService(MatchRepository matchRepository,
                            UserPreferencesRepository userPreferencesRepository,
                            UsersRepository usersRepository,
-                           ChatService chatService){
+                           ChatService chatService,
+                           HashIdsUtils hashIdsUtils){
         this.matchRepository = matchRepository;
         this.userPreferencesRepository = userPreferencesRepository;
         this.usersRepository = usersRepository;
         this.chatService = chatService;
+        this.hashIdsUtils = hashIdsUtils;
     }
 
 
@@ -175,7 +179,7 @@ public class MatchingService {
                     : matchRequest.getUserHighRecommendedAt();
 
             MatchingResponseDto matchingResponseDto = MatchingResponseDto.builder()
-                    .userId(HashIdsUtils.encode(other.getId()))
+                    .userId(hashIdsUtils.encode(other.getId()))
                     .name(other.getNickname())
                     .gender(other.getUserDetails().getGender())
                     .age(other.getUserDetails().getAge())

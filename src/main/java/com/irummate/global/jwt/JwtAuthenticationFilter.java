@@ -22,9 +22,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final HashIdsUtils hashIdsUtils;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
+                                   HashIdsUtils hashIdsUtils) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.hashIdsUtils = hashIdsUtils;
     }
 
     @Override
@@ -37,7 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             Claims claims = jwtTokenProvider.parseClaims(token);
-            Long userId = HashIdsUtils.decode(claims.getSubject());
+            Long userId = hashIdsUtils.decode(claims.getSubject());
             String role = claims.get("role", String.class);
 
             // AOP와 @AuthenticationPrincipal에서 Long userId를 그대로 사용할 수 있게 저장한다.

@@ -21,13 +21,16 @@ public class ChatWebSocketController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final HashIdsUtils hashIdsUtils;
 
     public ChatWebSocketController(
             ChatService chatService,
-            SimpMessagingTemplate messagingTemplate
+            SimpMessagingTemplate messagingTemplate,
+            HashIdsUtils hashIdsUtils
     ) {
         this.chatService = chatService;
         this.messagingTemplate = messagingTemplate;
+        this.hashIdsUtils = hashIdsUtils;
     }
 
     @MessageMapping("/chat/send")
@@ -45,7 +48,7 @@ public class ChatWebSocketController {
         );
 
         Long partnerId = chatService.getPartnerId(roomId, senderId);
-        String encodedPartnerId = HashIdsUtils.encode(partnerId);
+        String encodedPartnerId = hashIdsUtils.encode(partnerId);
         ChatNotificationDto notificationDto = chatService.createNotification(roomId, senderId, partnerId, responseDto);
 
         messagingTemplate.convertAndSend("/topic/room/" + roomId, responseDto);

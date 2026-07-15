@@ -17,9 +17,9 @@ public class CertificationStatusResponseDto {
     private final String adminComment;
     private final LocalDateTime createdAt;
 
-    public static CertificationStatusResponseDto from(Certification certification, String encodedUserId) {
+    public static CertificationStatusResponseDto from(Certification certification, String encodedUserId, String certificationId) {
         return CertificationStatusResponseDto.builder()
-                .certificationId(com.irummate.global.util.HashIdsUtils.encode(certification.getId()))
+                .certificationId(certificationId)
                 .userId(encodedUserId)
                 .imageKey(certification.getImageKey())
                 .status(certification.getCertificationStatus().name())

@@ -19,9 +19,9 @@ public class AdminUserResponseDto {
     private String status;
     private LocalDateTime createdAt;
 
-    public static AdminUserResponseDto from(Users user) {
+    public static AdminUserResponseDto from(Users user, String userId) {
         return new AdminUserResponseDto(
-                HashIdsUtils.encode(user.getId()),
+                userId,
                 user.getEmail(),
                 user.getNickname(),
                 user.getProfileImageUrl(),

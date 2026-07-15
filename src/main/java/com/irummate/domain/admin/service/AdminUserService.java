@@ -17,12 +17,16 @@ import java.util.List;
 public class AdminUserService {
 
     private final UsersRepository usersRepository;
+    private final HashIdsUtils hashIdsUtils;
 
     @Transactional(readOnly = true)
     public List<AdminUserResponseDto> getUsers() {
         return usersRepository.findAll()
                 .stream()
-                .map(AdminUserResponseDto::from)
+                .map(user -> AdminUserResponseDto.from(
+                        user,
+                        hashIdsUtils.encode(user.getId())
+                ))
                 .toList();
     }
 
@@ -32,7 +36,7 @@ public class AdminUserService {
 
         user.ban();
 
-        return AdminUserResponseDto.from(user);
+        return AdminUserResponseDto.from(user, userId);
     }
 
     @Transactional
@@ -41,7 +45,7 @@ public class AdminUserService {
 
         user.unban();
 
-        return AdminUserResponseDto.from(user);
+        return AdminUserResponseDto.from(user, userId);
     }
 
     private Users getUser(Long userId) {
@@ -51,7 +55,7 @@ public class AdminUserService {
 
     private Long decodeUserId(String userId) {
         try {
-            return HashIdsUtils.decode(userId);
+            return hashIdsUtils.decode(userId);
         } catch (IllegalArgumentException e) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }

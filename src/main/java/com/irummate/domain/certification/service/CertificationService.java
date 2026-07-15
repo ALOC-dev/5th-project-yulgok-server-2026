@@ -26,6 +26,7 @@ public class CertificationService {
     private final CertificationRepository certificationRepository;
     private final UsersRepository usersRepository;
     private final UserDetailsRepository userDetailsRepository;
+    private final HashIdsUtils hashIdsUtils;
 
     @Transactional
     public CertificationResponseDto createCertification(Long userId, CertificationRequestDto requestDto) {
@@ -46,7 +47,9 @@ public class CertificationService {
                 .build();
 
         Certification savedCertification = certificationRepository.save(certification);
-        return CertificationResponseDto.from(savedCertification, HashIdsUtils.encode(user.getId()));
+        return CertificationResponseDto.from(savedCertification,
+                hashIdsUtils.encode(user.getId()),
+                hashIdsUtils.encode(savedCertification.getId()));
     }
 
     public CertificationStatusResponseDto getLatestCertificationStatus(Long userId) {
@@ -56,7 +59,9 @@ public class CertificationService {
         Certification certification = certificationRepository.findTopByUser_IdOrderByCreatedAtDesc(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CERTIFICATION_NOT_FOUND));
 
-        return CertificationStatusResponseDto.from(certification, HashIdsUtils.encode(user.getId()));
+        return CertificationStatusResponseDto.from(certification,
+                hashIdsUtils.encode(user.getId()),
+                hashIdsUtils.encode(certification.getId()));
     }
 
     private void validateCertificationEligibility(Long userId, Users user) {
