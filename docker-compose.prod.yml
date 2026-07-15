@@ -1,0 +1,46 @@
+# 배포용 (AWS EC2 + RDS)
+# 실행: docker compose -f docker-compose.prod.yml up -d --build
+services:
+  app:
+    image: ghcr.io/aloc-dev/irummate-server:latest
+    container_name: irummate-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Seoul"
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      KAKAO_REDIRECT_URI: ${KAKAO_REDIRECT_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-3600000}
+      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-1209600000}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: irummate-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot-www:/var/www/certbot:ro
+      # HTTPS 전환 시 아래 주석 해제 (certbot 발급 후)
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - app
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -39,3 +39,8 @@ out/
 ### .env ###
 .env
 
+### Local test pages ###
+websocket-chat-test.html
+src/main/resources/static/websocket-chat-test.html
+
+certbot-www/
