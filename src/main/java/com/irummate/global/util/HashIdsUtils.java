@@ -10,8 +10,8 @@ public class HashIdsUtils {
     private final Hashids hashids;
 
     public HashIdsUtils(@Value("${hashids.salt}") String salt,
-                         @Value("${hashids.minlength}") int length) {
-        this.hashids = new Hashids(salt, length);
+                         @Value("${hashids.minlength}") String length) {
+        this.hashids = new Hashids(salt, Integer.parseInt(length));
     }
 
     public String encode(Long id) {
