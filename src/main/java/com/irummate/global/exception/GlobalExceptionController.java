@@ -21,6 +21,7 @@ public class GlobalExceptionController {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<GlobalApiResponse<?>> handleException(Exception e){
 
+
         log.warn("Internal Server Error: {}",e.getMessage());
 
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -63,7 +64,7 @@ public class GlobalExceptionController {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<GlobalApiResponse<?>> handleBusinessException(BusinessException e){
 
-        log.warn("BusinessException: {}", e.getMessage());
+        log.warn("BusinessException: {}", e.getMessage(), e);
 
         ErrorCode errorCode = e.getErrorCode();
 
