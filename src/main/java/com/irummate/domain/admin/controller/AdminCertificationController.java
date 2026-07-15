@@ -31,9 +31,10 @@ public class AdminCertificationController {
     @GetMapping
     @RequiresAuth(roles = AuthRole.ADMIN)
     public ResponseEntity<GlobalApiResponse<List<AdminCertificationResponseDto>>> getCertifications(
-            @RequestParam(required = false) CertificationStatus status
+            @RequestParam(required = false) CertificationStatus status,
+            @RequestParam(defaultValue = "0") int page
     ) {
-        List<AdminCertificationResponseDto> responseDtos = adminCertificationService.getCertifications(status);
+        List<AdminCertificationResponseDto> responseDtos = adminCertificationService.getCertifications(status, page);
 
         return ResponseEntity.ok(
                 GlobalApiResponse.multiSuccess(HttpStatus.OK, "인증 요청 목록 조회 성공", responseDtos, responseDtos.size())

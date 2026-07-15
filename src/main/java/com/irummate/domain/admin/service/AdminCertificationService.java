@@ -2,6 +2,7 @@ package com.irummate.domain.admin.service;
 
 import com.irummate.domain.admin.dto.AdminCertificationRejectRequestDto;
 import com.irummate.domain.admin.dto.AdminCertificationResponseDto;
+import com.irummate.domain.certification.dto.CertificationResponseDto;
 import com.irummate.domain.certification.entity.Certification;
 import com.irummate.domain.certification.entity.CertificationStatus;
 import com.irummate.domain.certification.repository.CertificationRepository;
@@ -9,6 +10,8 @@ import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
 import com.irummate.global.util.HashIdsUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,14 +24,15 @@ public class AdminCertificationService {
 
     private final CertificationRepository certificationRepository;
 
-    public List<AdminCertificationResponseDto> getCertifications(CertificationStatus status) {
-        List<Certification> certifications = (status == null)
-                ? certificationRepository.findAllByOrderByCreatedAtDesc()
-                : certificationRepository.findAllByCertificationStatusOrderByCreatedAtDesc(status);
+    public List<AdminCertificationResponseDto> getCertifications(CertificationStatus status, int page) {
+        Page<Certification> certifications = (status == null)
+                ? certificationRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, 15))
+                : certificationRepository.findAllByCertificationStatusOrderByCreatedAtDesc(status, PageRequest.of(page, 15));
 
-        return certifications.stream()
+        return certifications.getContent().stream()
                 .map(AdminCertificationResponseDto::from)
                 .toList();
+
     }
 
     public AdminCertificationResponseDto getCertification(String certificationId) {
