@@ -2,6 +2,7 @@ package com.irummate.domain.chat.service;
 
 import com.irummate.domain.chat.dto.ChatMessageResponseDto;
 import com.irummate.domain.chat.dto.ChatMessagesResponseDto;
+import com.irummate.domain.chat.dto.ChatNotificationDto;
 import com.irummate.domain.chat.dto.ChatReadResponseDto;
 import com.irummate.domain.chat.dto.ChatRoomLastMessageDto;
 import com.irummate.domain.chat.dto.ChatRoomPartnerDto;
@@ -133,9 +134,35 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public ChatUnreadCountResponseDto getTotalUnreadCount(Long userId) {
-        int totalUnreadCount = chatMessageRepository.countUnreadByParticipantId(userId);
+        return new ChatUnreadCountResponseDto(getTotalUnreadCountValue(userId));
+    }
 
-        return new ChatUnreadCountResponseDto(totalUnreadCount);
+    @Transactional(readOnly = true)
+    public int getTotalUnreadCountValue(Long userId) {
+        return chatMessageRepository.countUnreadByParticipantId(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public ChatNotificationDto createNotification(
+            Long roomId,
+            Long senderId,
+            Long receiverId,
+            ChatMessageResponseDto messageDto
+    ) {
+        Users sender = getUser(senderId);
+        int unreadCount = chatMessageRepository.countByRoomIdAndSenderIdNotAndIsReadFalse(roomId, receiverId);
+        int totalUnreadCount = getTotalUnreadCountValue(receiverId);
+
+        return new ChatNotificationDto(
+                roomId,
+                messageDto.getSenderId(),
+                sender.getNickname(),
+                sender.getProfileImageUrl(),
+                messageDto.getMessage(),
+                messageDto.getCreatedAt(),
+                unreadCount,
+                totalUnreadCount
+        );
     }
 
     @Transactional
@@ -183,6 +210,11 @@ public class ChatService {
     private ChatRoom getChatRoom(Long roomId) {
         return chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+    }
+
+    private Users getUser(Long userId) {
+        return usersRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
     private void validateRoomExists(Long roomId) {
@@ -236,8 +268,7 @@ public class ChatService {
     }
 
     private void validateCertifiedUser(Long userId) {
-        Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        Users user = getUser(userId);
 
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.FORBIDDEN);

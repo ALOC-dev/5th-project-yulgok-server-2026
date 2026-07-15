@@ -1,5 +1,6 @@
 package com.irummate.domain.chat.controller;
 
+import com.irummate.domain.chat.dto.ChatNotificationDto;
 import com.irummate.domain.chat.dto.ChatMessageResponseDto;
 import com.irummate.domain.chat.dto.ChatMessageSendRequestDto;
 import com.irummate.domain.chat.service.ChatService;
@@ -45,9 +46,10 @@ public class ChatWebSocketController {
 
         Long partnerId = chatService.getPartnerId(roomId, senderId);
         String encodedPartnerId = HashIdsUtils.encode(partnerId);
+        ChatNotificationDto notificationDto = chatService.createNotification(roomId, senderId, partnerId, responseDto);
 
         messagingTemplate.convertAndSend("/topic/room/" + roomId, responseDto);
-        messagingTemplate.convertAndSend("/queue/user/" + encodedPartnerId, responseDto);
+        messagingTemplate.convertAndSend("/queue/user/" + encodedPartnerId, notificationDto);
     }
 
     private Long resolveSenderId(Principal principal) {
