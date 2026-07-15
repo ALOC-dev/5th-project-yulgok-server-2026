@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.time.Duration;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -30,6 +31,11 @@ public class S3Utils {
      * 업로드용 Presigned URL 발급
      */
     public PresignedUrlResponse createUploadUrl(String fileName, String contentType, String dirName) {
+
+        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new IllegalArgumentException("허용되지 않는 파일 형식입니다: " + contentType);
+        }
+
         String key = S3UrlUtil.createKey(dirName, fileName);
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
@@ -58,4 +64,9 @@ public class S3Utils {
                 .key(key)
                 .build());
     }
+
+
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp"
+    );
 }

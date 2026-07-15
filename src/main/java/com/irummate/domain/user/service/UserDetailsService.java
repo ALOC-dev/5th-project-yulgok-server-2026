@@ -6,6 +6,7 @@ import com.irummate.domain.user.dto.UserProfileResponseDto;
 import com.irummate.domain.user.dto.UserProfileUpdateRequestDto;
 import com.irummate.domain.user.dto.UserProfileUpdateResponseDto;
 import com.irummate.domain.user.entity.UserDetails;
+import com.irummate.domain.user.entity.UserRole;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UserDetailsRepository;
 import com.irummate.domain.user.repository.UsersRepository;
@@ -60,6 +61,9 @@ public class UserDetailsService {
 
         // [DB 저장] 조립된 객체를 데이터베이스에 저장(Insert)합니다.
         UserDetails savedDetails = userDetailsRepository.save(userDetails);
+        if(user.getRole() == UserRole.GUEST){
+            user.promoteToUser();
+        }
 
         return toResponse(savedDetails);
     }
