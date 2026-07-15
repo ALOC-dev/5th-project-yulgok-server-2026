@@ -47,7 +47,7 @@ public class CertificationController {
         );
     }
 
-    @PostMapping("/presigned-url")
+    @GetMapping("/presigned-url")
     public ResponseEntity<GlobalApiResponse<CertificationPresignResponseDto>> createUploadUrl(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody CertificationPresignRequestDto requestDto

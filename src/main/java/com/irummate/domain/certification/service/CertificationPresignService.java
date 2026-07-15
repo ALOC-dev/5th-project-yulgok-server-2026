@@ -36,14 +36,26 @@ public class CertificationPresignService {
 
 
     private final S3Utils s3Utils;
-    private final CertificationRepository certificationRepository;
+    private final UsersRepository usersRepository;
+    private final UserDetailsRepository userDetailsRepository;
 
 
     public CertificationPresignResponseDto createUploadUrl(Long userId, CertificationPresignRequestDto requestDto) {
 
+//        Users me = usersRepository.findById(userId)
+//                .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
+//
+//        if(me.getRole() != UserRole.USER || me.getStatus() != UserStatus.PENDING){
+//            throw new BusinessException(ErrorCode.FORBIDDEN, "USER/PENDING 상태에서만 업로드 URL을 발급할 수 있습니다.");
+//        }
+//
+//        if(!userDetailsRepository.existsById(userId)){
+//            throw new BusinessException(ErrorCode.USER_DETAILS_REQUIRED);
+//        }
+
         String fileName = "Certification-"+requestDto.getSemester();
 
-        PresignedUrlResponse presignedUrlResponse = s3Utils.createUploadUrl(requestDto.getFileName(), requestDto.getFileName(), fileName);
+        PresignedUrlResponse presignedUrlResponse = s3Utils.createUploadUrl(requestDto.getFileName(), requestDto.getContentType(), fileName);
 
         return CertificationPresignResponseDto.builder()
                 .uploadUrl(presignedUrlResponse.presignedUrl())
