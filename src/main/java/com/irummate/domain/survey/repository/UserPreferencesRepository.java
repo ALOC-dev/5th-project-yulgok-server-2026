@@ -3,7 +3,9 @@ package com.irummate.domain.survey.repository;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -99,4 +101,26 @@ public interface UserPreferencesRepository extends JpaRepository<UserPreferences
             @Param("limit") int limit
     );
 
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT up
+    FROM UserPreferences up
+    WHERE up.userId IN :ids
+    ORDER BY up.userId ASC
+    """)
+    List<UserPreferences> findAllByIdsForUpdate(
+            @Param("ids") List<Long> ids
+    );
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT up
+    FROM UserPreferences up
+    WHERE up.userId = :userId
+    """)
+    Optional<UserPreferences> findByUserIdForUpdate(
+            @Param("userId") Long userId
+    );
 }

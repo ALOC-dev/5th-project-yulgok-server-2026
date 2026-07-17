@@ -18,7 +18,7 @@ public class MatchRequests {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "match_request_id")
+    @Column(name = "match_request_id", nullable = false, unique = true)
     private Long id;
 
     @ManyToOne

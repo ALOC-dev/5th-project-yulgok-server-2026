@@ -57,6 +57,27 @@ public class MatchingService {
     @Transactional
     public void confirm(Long userId, Long receiverId){
 
+        if (userId.equals(receiverId)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        List<Long> ids = List.of(userId, receiverId)
+                .stream()
+                .sorted()
+                .toList();
+
+        List<UserPreferences> lockedPrefs =
+                userPreferencesRepository.findAllByIdsForUpdate(ids);
+
+        if (lockedPrefs.size() != 2) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        if (lockedPrefs.stream()
+                .anyMatch(pref -> Boolean.TRUE.equals(pref.getIsMatched()))) {
+            throw new BusinessException(ErrorCode.ALREADY_CONFIRMED);
+        }
+
         MatchRequests myMatchRequest = matchRepository.findByIds(userId, receiverId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
 
@@ -235,6 +256,11 @@ public class MatchingService {
 
     @Transactional
     public void match(Long userId){
+
+        // 가장 먼저 본인 preferences 잠금
+        userPreferencesRepository.findByUserIdForUpdate(userId)
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Users me = usersRepository.findById(userId)
                 .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
