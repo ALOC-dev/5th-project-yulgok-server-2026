@@ -77,7 +77,7 @@ public class CertificationService {
     }
 
     private void validateImageKey(Long userId, CertificationRequestDto requestDto) {
-        String expectedPrefix = "certifications/" + userId + "/" + requestDto.getSemester() + "/";
+        String expectedPrefix = "certifications/" + requestDto.getSemester() + "/" + userId + "/";
 
         if (!requestDto.getImageKey().startsWith(expectedPrefix)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);

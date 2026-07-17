@@ -53,7 +53,7 @@ public class CertificationPresignService {
             throw new BusinessException(ErrorCode.USER_DETAILS_REQUIRED);
         }
 
-        String dirName = "certifications/" + userId + "/" + requestDto.getSemester();
+        String dirName = "certifications/" + requestDto.getSemester() + "/" + userId;
 
         PresignedUrlResponse presignedUrlResponse = s3Utils.createUploadUrl(requestDto.getFileName(), requestDto.getContentType(), dirName);
 
