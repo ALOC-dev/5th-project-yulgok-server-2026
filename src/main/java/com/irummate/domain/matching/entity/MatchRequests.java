@@ -10,7 +10,13 @@ import java.time.ZoneId;
 
 @Entity
 @Getter
-@Table(name = "match_requests")
+@Table(name = "match_requests",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_match_requests_user_pair",
+                        columnNames = {"user_low_id", "user_high_id"}
+                )
+        })
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,7 +24,7 @@ public class MatchRequests {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "match_request_id", nullable = false, unique = true)
+    @Column(name = "match_request_id")
     private Long id;
 
     @ManyToOne
