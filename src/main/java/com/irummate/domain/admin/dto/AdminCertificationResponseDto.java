@@ -13,18 +13,23 @@ public class AdminCertificationResponseDto {
 
     private String certificationId;
     private String userId;
-    private String imageKey;
+    private String semester;
+    private String imageURL;
     private String status;
     private String adminComment;
     private LocalDateTime createdAt;
 
     public static AdminCertificationResponseDto from(Certification certification,
                                                      String certificationId,
-                                                     String userId) {
+                                                     String userId,
+                                                     String imageURL) {
+
+
         return new AdminCertificationResponseDto(
                 certificationId,
                 userId,
-                certification.getImageKey(),
+                certification.getSemester(),
+                imageURL,
                 certification.getCertificationStatus().name(),
                 certification.getAdminComment(),
                 certification.getCreatedAt()

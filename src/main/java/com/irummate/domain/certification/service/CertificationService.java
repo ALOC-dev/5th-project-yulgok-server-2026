@@ -39,6 +39,8 @@ public class CertificationService {
             throw new BusinessException(ErrorCode.CERTIFICATION_ALREADY_EXISTS);
         }
 
+        validateImageKey(userId, requestDto);
+
         Certification certification = Certification.builder()
                 .user(user)
                 .semester(requestDto.getSemester())
@@ -71,6 +73,14 @@ public class CertificationService {
 
         if (!userDetailsRepository.existsById(userId)) {
             throw new BusinessException(ErrorCode.USER_DETAILS_REQUIRED);
+        }
+    }
+
+    private void validateImageKey(Long userId, CertificationRequestDto requestDto) {
+        String expectedPrefix = "certifications/" + userId + "/" + requestDto.getSemester() + "/";
+
+        if (!requestDto.getImageKey().startsWith(expectedPrefix)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
     }
 }

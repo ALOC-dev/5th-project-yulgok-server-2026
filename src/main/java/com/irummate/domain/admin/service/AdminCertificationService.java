@@ -7,6 +7,7 @@ import com.irummate.domain.certification.entity.CertificationStatus;
 import com.irummate.domain.certification.repository.CertificationRepository;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
+import com.irummate.global.s3.S3Utils;
 import com.irummate.global.util.HashIdsUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,7 @@ public class AdminCertificationService {
 
     private final CertificationRepository certificationRepository;
     private final HashIdsUtils hashIdsUtils;
+    private final S3Utils s3Utils;
 
     public List<AdminCertificationResponseDto> getCertifications(CertificationStatus status, int page) {
         Page<Certification> certifications = (status == null)
@@ -37,7 +39,10 @@ public class AdminCertificationService {
 
     public AdminCertificationResponseDto getCertification(String certificationId) {
         Certification certification = getCertificationEntity(certificationId);
-        return AdminCertificationResponseDto.from(certification, certificationId,hashIdsUtils.encode(certification.getUser().getId()));
+        return AdminCertificationResponseDto.from(certification,
+                certificationId,hashIdsUtils.encode(certification.getUser().getId()),
+                s3Utils.createDownloadUrl(certification.getImageKey()));
+
     }
 
     @Transactional
@@ -48,7 +53,10 @@ public class AdminCertificationService {
         certification.approve(null);
         certification.getUser().activate();
 
-        return AdminCertificationResponseDto.from(certification, certificationId, hashIdsUtils.encode(certification.getUser().getId()));
+        return AdminCertificationResponseDto.from(certification,
+                certificationId,
+                hashIdsUtils.encode(certification.getUser().getId()),
+                null);
     }
 
     @Transactional
@@ -58,7 +66,9 @@ public class AdminCertificationService {
 
         certification.reject(requestDto.getAdminComment());
 
-        return AdminCertificationResponseDto.from(certification, certificationId,hashIdsUtils.encode(certification.getUser().getId()));
+        return AdminCertificationResponseDto.from(certification,
+                certificationId,hashIdsUtils.encode(certification.getUser().getId()),
+                null);
     }
 
     private Certification getCertificationEntity(String certificationId) {
@@ -83,7 +93,8 @@ public class AdminCertificationService {
         return AdminCertificationResponseDto.from(
                 certification,
                 hashIdsUtils.encode(certification.getId()),
-                hashIdsUtils.encode(certification.getUser().getId())
+                hashIdsUtils.encode(certification.getUser().getId()),
+                null
         );
     }
 }

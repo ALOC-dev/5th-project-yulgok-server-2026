@@ -12,8 +12,8 @@ public final class S3UrlUtil {
      * 버킷 내 저장 경로(key) 생성
      * 예: images/550e8400-..._cat.jpg
      */
-    public static String createKey(String dirName, String fileName) {
-        return dirName + "/" + UUID.randomUUID() + "_" + fileName;
+    public static String createKey(String dirName, String extension) {
+        return dirName + "/" + UUID.randomUUID() + "." + extension;
     }
 
     /**
