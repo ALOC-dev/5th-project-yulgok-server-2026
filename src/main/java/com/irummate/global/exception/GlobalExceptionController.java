@@ -3,8 +3,11 @@ package com.irummate.global.exception;
 
 import com.irummate.global.response.GlobalApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -14,6 +17,28 @@ import java.util.List;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionController {
+
+    // 요청 관리 Handler
+    @ExceptionHandler({
+            CannotCreateTransactionException.class,
+            DataAccessResourceFailureException.class
+    })
+    public ResponseEntity<GlobalApiResponse<?>> handleDatabaseBusy(
+            Exception e
+    ) {
+        log.warn("Database unavailable or pool exhausted: {}", e.getMessage());
+
+        HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;
+
+        return ResponseEntity
+                .status(status)
+                .header(HttpHeaders.RETRY_AFTER, "2")
+                .body(GlobalApiResponse.error(
+                        status,
+                        "요청이 몰리고 있습니다. 잠시 후 다시 시도해주세요.",
+                        null
+                ));
+    }
 
 
     // Handler 처리되지 않은 다른 모든 예외들이 발생시키는 예외 처리용

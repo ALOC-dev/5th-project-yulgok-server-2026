@@ -9,7 +9,10 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       TZ: Asia/Seoul
-      JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Seoul"
+      JAVA_TOOL_OPTIONS: >-
+        -Duser.timezone=Asia/Seoul
+        -Xms256m
+        -Xmx1024m
       DB_URL: ${DB_URL}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
