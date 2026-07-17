@@ -46,6 +46,7 @@ public class AdminCertificationService {
         ensurePending(certification);
 
         certification.approve(null);
+        certification.getUser().activate();
 
         return AdminCertificationResponseDto.from(certification, certificationId, hashIdsUtils.encode(certification.getUser().getId()));
     }

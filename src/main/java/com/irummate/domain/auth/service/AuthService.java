@@ -5,6 +5,8 @@ import com.irummate.domain.auth.dto.KakaoTokenResponseDto;
 import com.irummate.domain.auth.dto.KakaoUserInfoResponseDto;
 import com.irummate.domain.auth.dto.LoginResponseDto;
 import com.irummate.domain.auth.dto.RefreshTokenResponseDto;
+import com.irummate.domain.certification.entity.Certification;
+import com.irummate.domain.certification.repository.CertificationRepository;
 import com.irummate.domain.survey.repository.UserPreferencesRepository;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
@@ -41,6 +43,7 @@ public class AuthService {
     private final KakaoProperties kakaoProperties;
     private final UsersRepository usersRepository;
     private final UserPreferencesRepository userPreferencesRepository;
+    private final CertificationRepository certificationRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final HashIdsUtils hashIdsUtils;
 
@@ -115,6 +118,10 @@ public class AuthService {
             return AuthStatusResponseDto.builder().authenticated(false).build();
         }
 
+        Certification latestCertification = certificationRepository
+                .findTopByUser_IdOrderByCreatedAtDesc(user.getId())
+                .orElse(null);
+
         return AuthStatusResponseDto.builder()
                 .authenticated(true)
                 .user(AuthStatusResponseDto.UserInfo.builder()
@@ -122,7 +129,11 @@ public class AuthService {
                         .nickname(user.getNickname())
                         .role(user.getRole().name())
                         .status(user.getStatus().name())
-                        .certificationStatus(null)
+                        .certificationStatus(
+                                latestCertification != null
+                                        ? latestCertification.getCertificationStatus().name()
+                                        : null
+                        )
                         .surveyCompleted(isSurveyCompleted(userId))
                         .build())
                 .build();
