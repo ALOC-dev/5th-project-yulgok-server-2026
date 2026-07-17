@@ -123,7 +123,7 @@ public class MatchingController {
     @RequiresSurvey
     @RequiresCertification
     @RequiresMatchDate
-    @PostMapping("/requests/confirm")
+    @PatchMapping("/requests/confirm")
     public ResponseEntity<GlobalApiResponse<?>> sendConfirm(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody MatchConfirmRequestDto requestDto
