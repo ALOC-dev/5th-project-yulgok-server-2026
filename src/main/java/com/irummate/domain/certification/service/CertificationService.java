@@ -13,20 +13,27 @@ import com.irummate.domain.user.repository.UserDetailsRepository;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
+import com.irummate.global.s3.S3Utils;
 import com.irummate.global.util.HashIdsUtils;
+import com.irummate.global.util.SemesterUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class CertificationService {
 
     private final CertificationRepository certificationRepository;
     private final UsersRepository usersRepository;
     private final UserDetailsRepository userDetailsRepository;
     private final HashIdsUtils hashIdsUtils;
+    private final S3Utils s3Utils;
 
     @Transactional
     public CertificationResponseDto createCertification(Long userId, CertificationRequestDto requestDto) {
@@ -34,16 +41,28 @@ public class CertificationService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         validateCertificationEligibility(userId, user);
+        String semester = SemesterUtils.currentSemester();
 
-        if (certificationRepository.existsByUser_IdAndSemester(userId, requestDto.getSemester())) {
-            throw new BusinessException(ErrorCode.CERTIFICATION_ALREADY_EXISTS);
+        Optional<Certification> existingCertification = certificationRepository.findByUser_IdAndSemester(userId, semester);
+        validateCertificationSubmittable(existingCertification);
+
+        validateImageKey(userId, semester, requestDto.getImageKey());
+        validateUploadedImage(requestDto.getImageKey());
+
+        if (existingCertification.isPresent()) {
+            Certification certification = existingCertification.get();
+            String previousImageKey = certification.getImageKey();
+            certification.resubmit(requestDto.getImageKey());
+            deletePreviousImage(previousImageKey, requestDto.getImageKey());
+
+            return CertificationResponseDto.from(certification,
+                    hashIdsUtils.encode(user.getId()),
+                    hashIdsUtils.encode(certification.getId()));
         }
-
-        validateImageKey(userId, requestDto);
 
         Certification certification = Certification.builder()
                 .user(user)
-                .semester(requestDto.getSemester())
+                .semester(semester)
                 .imageKey(requestDto.getImageKey())
                 .certificationStatus(CertificationStatus.REQUESTED)
                 .build();
@@ -76,11 +95,44 @@ public class CertificationService {
         }
     }
 
-    private void validateImageKey(Long userId, CertificationRequestDto requestDto) {
-        String expectedPrefix = "certifications/" + requestDto.getSemester() + "/" + userId + "/";
+    private void validateCertificationSubmittable(Optional<Certification> certification) {
+        certification
+                .filter(existingCertification -> existingCertification.getCertificationStatus() != CertificationStatus.REJECTED)
+                .ifPresent(existingCertification -> {
+                    throw new BusinessException(ErrorCode.CERTIFICATION_ALREADY_EXISTS);
+                });
+    }
 
-        if (!requestDto.getImageKey().startsWith(expectedPrefix)) {
+    private void validateImageKey(Long userId, String semester, String imageKey) {
+        String expectedPrefix = "certifications/" + semester + "/" + userId + "/";
+
+        if (!imageKey.startsWith(expectedPrefix)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private void validateUploadedImage(String imageKey) {
+        try {
+            s3Utils.validateUploadedImage(imageKey);
+        } catch (BusinessException e) {
+            try {
+                s3Utils.delete(imageKey);
+            } catch (Exception deleteException) {
+                log.warn("Failed to delete invalid certification image. key={}", imageKey, deleteException);
+            }
+            throw e;
+        }
+    }
+
+    private void deletePreviousImage(String previousImageKey, String currentImageKey) {
+        if (previousImageKey.equals(currentImageKey)) {
+            return;
+        }
+
+        try {
+            s3Utils.delete(previousImageKey);
+        } catch (Exception e) {
+            log.warn("Failed to delete previous certification image. key={}", previousImageKey, e);
         }
     }
 }

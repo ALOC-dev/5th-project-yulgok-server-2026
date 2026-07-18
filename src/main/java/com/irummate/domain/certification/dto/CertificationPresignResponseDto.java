@@ -11,5 +11,6 @@ public class CertificationPresignResponseDto {
 
     private final String uploadUrl;
     private final String fileKey;
+    private final String semester;
     private final LocalDateTime expiresAt;
 }

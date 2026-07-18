@@ -2,7 +2,7 @@ package com.irummate.domain.certification.service;
 
 import com.irummate.domain.certification.dto.CertificationPresignRequestDto;
 import com.irummate.domain.certification.dto.CertificationPresignResponseDto;
-import com.irummate.domain.certification.entity.Certification;
+import com.irummate.domain.certification.entity.CertificationStatus;
 import com.irummate.domain.certification.repository.CertificationRepository;
 import com.irummate.domain.user.entity.UserRole;
 import com.irummate.domain.user.entity.UserStatus;
@@ -13,21 +13,13 @@ import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
 import com.irummate.global.s3.PresignedUrlResponse;
 import com.irummate.global.s3.S3Utils;
+import com.irummate.global.util.SemesterUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.util.HexFormat;
-import java.util.Locale;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +30,7 @@ public class CertificationPresignService {
     private final S3Utils s3Utils;
     private final UsersRepository usersRepository;
     private final UserDetailsRepository userDetailsRepository;
+    private final CertificationRepository certificationRepository;
 
 
     public CertificationPresignResponseDto createUploadUrl(Long userId, CertificationPresignRequestDto requestDto) {
@@ -53,15 +46,26 @@ public class CertificationPresignService {
             throw new BusinessException(ErrorCode.USER_DETAILS_REQUIRED);
         }
 
-        String dirName = "certifications/" + requestDto.getSemester() + "/" + userId;
+        String semester = SemesterUtils.currentSemester();
+        ensureUploadUrlIssuable(userId, semester);
+
+        String dirName = "certifications/" + semester + "/" + userId;
 
         PresignedUrlResponse presignedUrlResponse = s3Utils.createUploadUrl(requestDto.getFileName(), requestDto.getContentType(), dirName);
 
         return CertificationPresignResponseDto.builder()
                 .uploadUrl(presignedUrlResponse.presignedUrl())
                 .fileKey(presignedUrlResponse.key())
+                .semester(semester)
                 .expiresAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusMinutes(5))
                 .build();
     }
 
+    private void ensureUploadUrlIssuable(Long userId, String semester) {
+        certificationRepository.findByUser_IdAndSemester(userId, semester)
+                .filter(certification -> certification.getCertificationStatus() != CertificationStatus.REJECTED)
+                .ifPresent(certification -> {
+                    throw new BusinessException(ErrorCode.CERTIFICATION_ALREADY_EXISTS);
+                });
+    }
 }

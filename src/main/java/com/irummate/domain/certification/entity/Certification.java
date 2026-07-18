@@ -79,4 +79,10 @@ public class Certification {
         this.certificationStatus = CertificationStatus.REJECTED;
         this.adminComment = adminComment;
     }
+
+    public void resubmit(String imageKey) {
+        this.imageKey = imageKey;
+        this.certificationStatus = CertificationStatus.REQUESTED;
+        this.adminComment = null;
+    }
 }
