@@ -1,12 +1,16 @@
 package com.irummate.domain.admin.service;
 
 import com.irummate.domain.admin.dto.AdminUserResponseDto;
+import com.irummate.domain.admin.dto.AdminUsersResponseDto;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
 import com.irummate.global.util.HashIdsUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,18 +20,35 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminUserService {
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final UsersRepository usersRepository;
     private final HashIdsUtils hashIdsUtils;
 
     @Transactional(readOnly = true)
-    public List<AdminUserResponseDto> getUsers() {
-        return usersRepository.findAll()
+    public AdminUsersResponseDto getUsers(int page, int size) {
+        validatePageRequest(page, size);
+
+        Page<Users> usersPage = usersRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        );
+
+        List<AdminUserResponseDto> users = usersPage.getContent()
                 .stream()
                 .map(user -> AdminUserResponseDto.from(
                         user,
                         hashIdsUtils.encode(user.getId())
                 ))
                 .toList();
+
+        return new AdminUsersResponseDto(
+                users,
+                usersPage.getNumber(),
+                usersPage.getSize(),
+                usersPage.getTotalElements(),
+                usersPage.getTotalPages(),
+                usersPage.hasNext()
+        );
     }
 
     @Transactional
@@ -51,6 +72,12 @@ public class AdminUserService {
     private Users getUser(Long userId) {
         return usersRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private void validatePageRequest(int page, int size) {
+        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
     }
 
     private Long decodeUserId(String userId) {

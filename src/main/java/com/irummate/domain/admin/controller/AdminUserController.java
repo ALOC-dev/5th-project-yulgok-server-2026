@@ -1,6 +1,7 @@
 package com.irummate.domain.admin.controller;
 
 import com.irummate.domain.admin.dto.AdminUserResponseDto;
+import com.irummate.domain.admin.dto.AdminUsersResponseDto;
 import com.irummate.domain.admin.service.AdminUserService;
 import com.irummate.global.aop.AuthRole;
 import com.irummate.global.aop.RequiresAuth;
@@ -13,9 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,13 +26,15 @@ public class AdminUserController {
 
     @GetMapping
     @RequiresAuth(roles = AuthRole.ADMIN)
-    public ResponseEntity<GlobalApiResponse<List<AdminUserResponseDto>>> getUsers(
-            @AuthenticationPrincipal Long adminUserId
+    public ResponseEntity<GlobalApiResponse<AdminUsersResponseDto>> getUsers(
+            @AuthenticationPrincipal Long adminUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        List<AdminUserResponseDto> responseDtos = adminUserService.getUsers();
+        AdminUsersResponseDto responseDto = adminUserService.getUsers(page, size);
 
         return ResponseEntity.ok(
-                GlobalApiResponse.multiSuccess(HttpStatus.OK, "회원 목록 조회 성공", responseDtos, responseDtos.size())
+                GlobalApiResponse.success(HttpStatus.OK, "회원 목록 조회 성공", responseDto)
         );
     }
 
