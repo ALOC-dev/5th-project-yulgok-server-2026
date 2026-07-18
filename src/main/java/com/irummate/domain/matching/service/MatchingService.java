@@ -165,7 +165,9 @@ public class MatchingService {
             throw new BusinessException(ErrorCode.NOT_REJECTABLE_STATUS);
         }
 
-        if(myStatus != MatchStatus.HEART && myStatus != MatchStatus.RECOMMENDED){
+        if(myStatus != MatchStatus.HEART
+                && myStatus != MatchStatus.RECOMMENDED
+                && !(myStatus == MatchStatus.NONE && otherStatus == MatchStatus.HEART)){
             throw new BusinessException(ErrorCode.NOT_REJECTABLE_STATUS);
         }
 

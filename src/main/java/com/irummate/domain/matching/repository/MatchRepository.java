@@ -77,18 +77,30 @@ JOIN FETCH uh.userDetails
 JOIN FETCH uh.userPreferences
 WHERE (
     mr.userLow.id = :userId
-    AND mr.userLowStatus NOT IN (
-        com.irummate.domain.matching.entity.MatchStatus.NONE,
-        com.irummate.domain.matching.entity.MatchStatus.REJECTED,
-        com.irummate.domain.matching.entity.MatchStatus.CLOSED
+    AND (
+        mr.userLowStatus NOT IN (
+            com.irummate.domain.matching.entity.MatchStatus.NONE,
+            com.irummate.domain.matching.entity.MatchStatus.REJECTED,
+            com.irummate.domain.matching.entity.MatchStatus.CLOSED
+        )
+        OR (
+            mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
+            AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.HEART
+        )
     )
 )
 OR (
     mr.userHigh.id = :userId
-    AND mr.userHighStatus NOT IN (
-        com.irummate.domain.matching.entity.MatchStatus.NONE,
-        com.irummate.domain.matching.entity.MatchStatus.REJECTED,
-        com.irummate.domain.matching.entity.MatchStatus.CLOSED
+    AND (
+        mr.userHighStatus NOT IN (
+            com.irummate.domain.matching.entity.MatchStatus.NONE,
+            com.irummate.domain.matching.entity.MatchStatus.REJECTED,
+            com.irummate.domain.matching.entity.MatchStatus.CLOSED
+        )
+        OR (
+            mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
+            AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.HEART
+        )
     )
 )
 ORDER BY mr.matchPercentage DESC
