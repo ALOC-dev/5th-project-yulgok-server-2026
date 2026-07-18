@@ -8,6 +8,7 @@ import com.irummate.domain.auth.dto.RefreshTokenResponseDto;
 import com.irummate.domain.certification.entity.Certification;
 import com.irummate.domain.certification.repository.CertificationRepository;
 import com.irummate.domain.survey.repository.UserPreferencesRepository;
+import com.irummate.domain.user.entity.UserStatus;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.config.KakaoProperties;
@@ -86,7 +87,7 @@ public class AuthService {
         Long internalUserId = hashIdsUtils.decode(encodedUserId);
 
         Users user = usersRepository.findById(Long.valueOf(internalUserId)).orElse(null);
-        if (user == null) {
+        if (user == null || user.getStatus() == UserStatus.WITHDRAWN) {
             return null;
         }
 
@@ -115,6 +116,10 @@ public class AuthService {
         }
 
         if (user == null) {
+            return AuthStatusResponseDto.builder().authenticated(false).build();
+        }
+
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
             return AuthStatusResponseDto.builder().authenticated(false).build();
         }
 
@@ -154,7 +159,6 @@ public class AuthService {
                 .nickname(profile.getNickname())
                 .profileImageUrl(profile.getProfileImageUrl())
                 .build();
-
 
         return new UserRegistration(usersRepository.save(newUser), true);
     }

@@ -1,5 +1,7 @@
 package com.irummate.global.jwt;
 
+import com.irummate.domain.user.entity.UserStatus;
+import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.util.HashIdsUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -23,11 +25,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final HashIdsUtils hashIdsUtils;
+    private final UsersRepository usersRepository;
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
-                                   HashIdsUtils hashIdsUtils) {
+                                   HashIdsUtils hashIdsUtils,
+                                   UsersRepository usersRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.hashIdsUtils = hashIdsUtils;
+        this.usersRepository = usersRepository;
     }
 
     @Override
@@ -43,15 +48,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long userId = hashIdsUtils.decode(claims.getSubject());
             String role = claims.get("role", String.class);
 
-            // AOP와 @AuthenticationPrincipal에서 Long userId를 그대로 사용할 수 있게 저장한다.
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
+            boolean blocked = usersRepository.findById(userId)
+                    .map(user -> user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.WITHDRAWN)
+                    .orElse(true);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (!blocked) {
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userId,
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                        );
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);

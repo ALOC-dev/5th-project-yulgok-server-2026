@@ -85,7 +85,7 @@ public class ValidationAspect {
         Users user = usersRepository.findById(userId)
                 .orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (user.getStatus() == UserStatus.BANNED) {
+        if (user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.WITHDRAWN) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 

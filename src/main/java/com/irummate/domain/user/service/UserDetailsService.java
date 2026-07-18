@@ -7,14 +7,23 @@ import com.irummate.domain.user.dto.UserProfileUpdateRequestDto;
 import com.irummate.domain.user.dto.UserProfileUpdateResponseDto;
 import com.irummate.domain.user.entity.UserDetails;
 import com.irummate.domain.user.entity.UserRole;
+import com.irummate.domain.user.entity.UserStatus;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UserDetailsRepository;
 import com.irummate.domain.user.repository.UsersRepository;
+import com.irummate.global.config.KakaoProperties;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * @Service: 스프링에게 이 클래스가 비즈니스 로직을 담당하는 '서비스' 컴포넌트임을 알립니다.
@@ -30,6 +39,8 @@ public class UserDetailsService {
 
     private final UsersRepository usersRepository;
     private final UserDetailsRepository userDetailsRepository;
+    private final KakaoProperties kakaoProperties;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     /**
      * 역할: 사용자의 추가 필수 정보(본명, 학번, 나이 등)를 최초로 저장합니다.
@@ -114,6 +125,21 @@ public class UserDetailsService {
                 .build();
     }
 
+    @Transactional
+    public void withdraw(Long userId) {
+        Long userPk = Long.valueOf(userId);
+
+        Users user = usersRepository.findById(userPk)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "이미 탈퇴한 계정입니다.");
+        }
+
+        unlinkKakaoUser(user.getOauthId());
+        user.withdraw();
+    }
+
 
 
     /**
@@ -146,5 +172,28 @@ public class UserDetailsService {
                 .department(userDetails.getDepartment())
                 .phoneNumber(userDetails.getPhoneNumber())
                 .build();
+    }
+
+    private void unlinkKakaoUser(String kakaoUserId) {
+        String adminKey = kakaoProperties.getAdminKey();
+        if (adminKey == null || adminKey.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "카카오 관리자 키가 필요합니다.");
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.set("Authorization", "KakaoAK " + adminKey);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("target_id_type", "user_id");
+        params.add("target_id", kakaoUserId);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        try {
+            restTemplate.postForObject("https://kapi.kakao.com/v1/user/unlink", request, String.class);
+        } catch (RestClientException e) {
+            throw new BusinessException(ErrorCode.KAKAO_API_ERROR);
+        }
     }
 }
