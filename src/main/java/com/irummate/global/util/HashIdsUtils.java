@@ -1,5 +1,7 @@
 package com.irummate.global.util;
 
+import com.irummate.global.exception.BusinessException;
+import com.irummate.global.exception.ErrorCode;
 import org.hashids.Hashids;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,16 +26,12 @@ public class HashIdsUtils {
 
     public Long decode(String hashId) {
         if (hashId == null || hashId.isBlank()) {
-            throw new IllegalArgumentException("Hashids value must not be blank.");
-        }
-
-        if (hashId.chars().allMatch(Character::isDigit)) {
-            return Long.valueOf(hashId);
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "식별자가 비어 있습니다.");
         }
 
         long[] decoded = hashids.decode(hashId);
         if (decoded.length == 0) {
-            throw new IllegalArgumentException("Invalid Hashids value.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "유효하지 않은 식별자입니다.");
         }
 
         return decoded[0];
