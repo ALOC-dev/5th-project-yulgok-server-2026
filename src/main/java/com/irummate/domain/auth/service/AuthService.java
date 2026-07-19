@@ -78,7 +78,7 @@ public class AuthService {
     }
 
     public RefreshTokenResponseDto refreshAccessToken(String refreshToken) {
-        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+        if (refreshToken == null || !jwtTokenProvider.validateRefreshToken(refreshToken)) {
             return null;
         }
 

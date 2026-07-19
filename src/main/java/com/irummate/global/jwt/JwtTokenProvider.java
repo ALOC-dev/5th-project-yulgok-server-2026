@@ -12,6 +12,10 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
+    private static final String TOKEN_TYPE_CLAIM = "type";
+    private static final String ACCESS_TOKEN_TYPE = "access";
+    private static final String REFRESH_TOKEN_TYPE = "refresh";
+
     private final JwtProperties jwtProperties;
     private SecretKey secretKey;
 
@@ -29,11 +33,11 @@ public class JwtTokenProvider {
     }
     //user id랑 role을 넣어서 access토큰 생성
     public String createAccessToken(String userId, String role) {
-        return createToken(userId, role, jwtProperties.getAccessTokenExpiration());
+        return createToken(userId, role, ACCESS_TOKEN_TYPE, jwtProperties.getAccessTokenExpiration());
     }
     //refresh토큰 생성
     public String createRefreshToken(String userId, String role) {
-        return createToken(userId, role, jwtProperties.getRefreshTokenExpiration());
+        return createToken(userId, role, REFRESH_TOKEN_TYPE, jwtProperties.getRefreshTokenExpiration());
     }
     //토큰 검증
     public boolean validateToken(String token) {
@@ -46,6 +50,23 @@ public class JwtTokenProvider {
         }
     }
     //토큰 내용 꺼내기
+    public boolean validateAccessToken(String token) {
+        return validateTokenType(token, ACCESS_TOKEN_TYPE);
+    }
+
+    public boolean validateRefreshToken(String token) {
+        return validateTokenType(token, REFRESH_TOKEN_TYPE);
+    }
+
+    private boolean validateTokenType(String token, String tokenType) {
+        try {
+            Claims claims = parseClaims(token);
+            return tokenType.equals(claims.get(TOKEN_TYPE_CLAIM, String.class));
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     public Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
@@ -62,7 +83,7 @@ public class JwtTokenProvider {
         return jwtProperties.getRefreshTokenExpiration();
     }
     //실제 토큰 만들어줌
-    private String createToken(String userId, String role, Long expirationMillis) {
+    private String createToken(String userId, String role, String tokenType, Long expirationMillis) {
         Date now = new Date();
         Date expiresAt = new Date(now.getTime() + expirationMillis);
 
@@ -70,6 +91,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(userId)
                 .claim("role", role)
+                .claim(TOKEN_TYPE_CLAIM, tokenType)
                 .issuedAt(now)
                 .expiration(expiresAt)
                 .signWith(secretKey)
