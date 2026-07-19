@@ -430,9 +430,11 @@ public class MatchingService {
                 .userHighPreferences(higher.getUserPreferences())
                 .userLowPreferences(lower.getUserPreferences())
                 .matchPercentage(matchPercentage)
-                .userHighStatus((myUserId >= otherUserId)?MatchStatus.RECOMMENDED:MatchStatus.NONE)
-                .userLowStatus((myUserId >= otherUserId)?MatchStatus.NONE:MatchStatus.RECOMMENDED)
+                .userHighStatus(MatchStatus.NONE)
+                .userLowStatus(MatchStatus.NONE)
                 .build();
+
+        newMatchRequest.updateStatusOf(myUserId, MatchStatus.RECOMMENDED);
 
         return newMatchRequest;
     }
