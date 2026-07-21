@@ -47,7 +47,7 @@ public class AuthController {
         //    자바스크립트가 접근할 수 없는 안전한 'HttpOnly 쿠키' 형태로 만듭니다.
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResult.refreshToken())
                 .httpOnly(true)          // 브라우저에서 스크립트로 쿠키 탈취 불가능하게 설정 (XSS 공격 방지)
-                .secure(false)           // 로컬 개발 환경(http)에서도 테스트 가능하도록 우선 false 처리 (실배포시 true 권장)
+                .secure(true)           // 로컬 개발 환경(http)에서도 테스트 가능하도록 우선 false 처리 (실배포시 true 권장)
                 .path("/")               // 우리 서버의 모든 주소 경로에서 이 쿠키를 사용할 수 있게 세팅
                 .maxAge(Duration.ofDays(14)) // 쿠키의 유효기간을 14일(2주일)로 설정
                 .sameSite("Lax")         // 크로스 사이트 요청 위조(CSRF) 공격을 방지하는 브라우저 보안 정책
@@ -88,7 +88,7 @@ public class AuthController {
         // 똑같은 이름의 쿠키를 만들되, 만료시간(maxAge)을 0으로 주어 브라우저가 즉시 삭제하게 만듭니다.
         ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(0) // 즉시 만료
                 .sameSite("Lax")

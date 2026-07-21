@@ -90,7 +90,7 @@ public class UserDetailsController {
 
         ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(Duration.ZERO)
                 .sameSite("Lax")

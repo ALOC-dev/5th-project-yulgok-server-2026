@@ -46,9 +46,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws/chat")
                 // 프론트 로컬 개발 서버와 백엔드 정적 테스트 페이지에서만 웹소켓 연결을 허용한다.
                 .setAllowedOriginPatterns(
-                        "http://localhost:5173",
-                        "http://localhost:3000",
-                        "http://localhost:8080"
+                        "https://www.irummate.com",
+                        "https://irummate.com"
                 )
                 .withSockJS();
     }
