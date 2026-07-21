@@ -26,7 +26,9 @@ public class SecurityConfig {
         //여기에 프론트 주소 추가하면 됨
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "http://localhost:5173"
+                "http://localhost:5173",
+                "https://www.irummate.com",
+                "https://irummate.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
