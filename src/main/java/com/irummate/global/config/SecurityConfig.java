@@ -25,6 +25,7 @@ public class SecurityConfig {
 
         //여기에 프론트 주소 추가하면 됨
         config.setAllowedOrigins(List.of(
+                "http://localhost.com:5173",
                 "https://www.irummate.com",
                 "https://irummate.com"
         ));

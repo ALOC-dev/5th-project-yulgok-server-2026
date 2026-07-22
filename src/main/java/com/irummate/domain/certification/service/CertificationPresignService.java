@@ -55,7 +55,7 @@ public class CertificationPresignService {
 
         return CertificationPresignResponseDto.builder()
                 .uploadUrl(presignedUrlResponse.presignedUrl())
-                .fileKey(presignedUrlResponse.key())
+                .imageKey(presignedUrlResponse.key())
                 .semester(semester)
                 .expiresAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusMinutes(5))
                 .build();

@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class CertificationPresignResponseDto {
 
     private final String uploadUrl;
-    private final String fileKey;
+    private final String imageKey;
     private final String semester;
     private final LocalDateTime expiresAt;
 }
