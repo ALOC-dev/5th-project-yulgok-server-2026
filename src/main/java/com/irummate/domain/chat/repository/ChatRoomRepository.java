@@ -30,7 +30,15 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
                     WHEN mr.userLow.id = :userId THEN mr.userHigh.profileImageUrl
                     ELSE mr.userLow.profileImageUrl
                 END,
-                cr.status
+                cr.status,
+                CASE
+                    WHEN mr.userLow.id = :userId THEN mr.userLowStatus
+                    ELSE mr.userHighStatus
+                END,
+                CASE
+                    WHEN mr.userLow.id = :userId THEN mr.userHighStatus
+                    ELSE mr.userLowStatus
+                END
             )
             FROM ChatRoom cr
             JOIN MatchRequests mr ON mr.id = cr.matchRequestId

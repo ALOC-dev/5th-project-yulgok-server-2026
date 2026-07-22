@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.irummate.domain.matching.util.MatchingDtoMapper.toCardStatus;
+
 @Service
 public class ChatService {
 
@@ -92,7 +94,8 @@ public class ChatService {
                             lastMessage == null ? null : lastMessage.lastMessage(),
                             lastMessage == null ? null : lastMessage.lastMessageTime(),
                             unreadCount.intValue(),
-                            room.status()
+                            room.status(),
+                            toCardStatus(room.myMatchStatus(), room.partnerMatchStatus())
                     );
                 })
                 .toList();

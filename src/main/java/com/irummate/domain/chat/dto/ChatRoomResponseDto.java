@@ -1,6 +1,7 @@
 package com.irummate.domain.chat.dto;
 
 import com.irummate.domain.chat.entity.ChatRoomStatus;
+import com.irummate.domain.matching.dto.MatchCardStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -18,4 +19,5 @@ public class ChatRoomResponseDto { //JSON 응답 Key 설정
     private LocalDateTime lastMessageTime;
     private Integer unreadCount;
     private ChatRoomStatus status;
+    private MatchCardStatus matchStatus;
 }
