@@ -1,5 +1,6 @@
 package com.irummate.domain.matching.controller;
 
+import com.irummate.domain.matching.dto.ConfirmedContactResponseDto;
 import com.irummate.domain.matching.dto.MatchConfirmRequestDto;
 import com.irummate.domain.matching.dto.MatchingRequestDto;
 import com.irummate.domain.matching.dto.MatchingResponseDto;
@@ -130,6 +131,21 @@ public class MatchingController {
     ){
         matchingService.confirm(userId, hashIdsUtils.decode(requestDto.getReceiverId()));
         return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "매칭 확정 전달 성공", null));
+    }
+
+    @RequiresSurvey
+    @RequiresCertification
+    @GetMapping("/requests/{receiverId}/contact")
+    public ResponseEntity<GlobalApiResponse<?>> getConfirmedContact(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable String receiverId
+    ) {
+        ConfirmedContactResponseDto responseDto = matchingService.getConfirmedContact(
+                userId,
+                hashIdsUtils.decode(receiverId)
+        );
+
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "확정 상대 연락처 조회 성공", responseDto));
     }
 
 }

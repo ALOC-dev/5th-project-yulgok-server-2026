@@ -1,6 +1,7 @@
 package com.irummate.domain.matching.service;
 
 import com.irummate.domain.chat.service.ChatService;
+import com.irummate.domain.matching.dto.ConfirmedContactResponseDto;
 import com.irummate.domain.matching.dto.MatchingResponseDto;
 import com.irummate.domain.matching.dto.PreferredAnswerDto;
 import com.irummate.domain.matching.entity.MatchRequests;
@@ -8,6 +9,7 @@ import com.irummate.domain.matching.entity.MatchStatus;
 import com.irummate.domain.matching.repository.MatchRepository;
 import com.irummate.domain.survey.entity.UserPreferences;
 import com.irummate.domain.survey.repository.UserPreferencesRepository;
+import com.irummate.domain.user.entity.UserDetails;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
@@ -107,6 +109,34 @@ public class MatchingService {
         }
 
         throw new BusinessException(ErrorCode.NOT_CONFIRMABLE_STATUS);
+    }
+
+    @Transactional(readOnly = true)
+    public ConfirmedContactResponseDto getConfirmedContact(Long userId, Long receiverId) {
+        if (userId.equals(receiverId)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        MatchRequests matchRequest = matchRepository.findByIds(userId, receiverId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
+
+        if (!matchRequest.isConfirmed()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "서로 최종 확정된 상대의 연락처만 조회할 수 있습니다.");
+        }
+
+        Users partner = matchRequest.getUserLow().getId().equals(userId)
+                ? matchRequest.getUserHigh()
+                : matchRequest.getUserLow();
+
+        UserDetails partnerDetails = partner.getUserDetails();
+        if (partnerDetails == null) {
+            throw new BusinessException(ErrorCode.USER_DETAILS_REQUIRED);
+        }
+
+        return new ConfirmedContactResponseDto(
+                partnerDetails.getRealName(),
+                partnerDetails.getPhoneNumber()
+        );
     }
 
 
