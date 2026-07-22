@@ -123,4 +123,14 @@ public class UserPreferences {
         this.isMatched = true;
     }
 
+    public void updatePreferences(Integer smokingStatus,
+                                  String introduce,
+                                  SurveyAnswers answers,
+                                  List<SurveyAnswerField> visibleProfileFields) {
+        this.smokingStatus = smokingStatus;
+        this.introduce = introduce;
+        this.answers = answers;
+        this.visibleProfileFields = visibleProfileFields;
+    }
+
 }
