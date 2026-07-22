@@ -117,7 +117,7 @@ public class MatchingService {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        MatchRequests matchRequest = matchRepository.findByIds(userId, receiverId)
+        MatchRequests matchRequest = matchRepository.findByIdsWithoutLock(userId, receiverId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
 
         if (!matchRequest.isConfirmed()) {

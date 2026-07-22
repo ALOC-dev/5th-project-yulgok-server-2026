@@ -133,4 +133,15 @@ List<MatchRequests> findAllVisibleByUserId(@Param("userId") Long userId);
             @Param("userId1") Long userId1,
             @Param("userId2") Long userId2
     );
+
+    @Query("""
+    SELECT mr
+    FROM MatchRequests mr
+    WHERE mr.userLow.id = LEAST(:userId1, :userId2)
+    AND mr.userHigh.id = GREATEST(:userId1, :userId2)
+    """)
+    Optional<MatchRequests> findByIdsWithoutLock(
+            @Param("userId1") Long userId1,
+            @Param("userId2") Long userId2
+    );
 }
