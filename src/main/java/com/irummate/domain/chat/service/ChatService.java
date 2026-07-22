@@ -86,6 +86,7 @@ public class ChatService {
 
                     return new ChatRoomResponseDto(
                             room.roomId(),
+                            hashIdsUtils.encode(room.partnerId()),
                             room.partnerName(),
                             room.partnerProfileImageUrl(),
                             lastMessage == null ? null : lastMessage.lastMessage(),

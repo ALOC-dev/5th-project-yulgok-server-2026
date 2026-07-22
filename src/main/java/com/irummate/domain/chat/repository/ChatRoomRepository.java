@@ -19,6 +19,10 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             SELECT new com.irummate.domain.chat.dto.ChatRoomPartnerDto(
                 cr.id,
                 CASE
+                    WHEN mr.userLow.id = :userId THEN mr.userHigh.id
+                    ELSE mr.userLow.id
+                END,
+                CASE
                     WHEN mr.userLow.id = :userId THEN mr.userHigh.nickname
                     ELSE mr.userLow.nickname
                 END,

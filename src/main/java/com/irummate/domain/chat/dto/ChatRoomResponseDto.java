@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class ChatRoomResponseDto { //JSON 응답 Key 설정 
 
     private Long roomId;
+    private String partnerId;
     private String partnerName;
     private String partnerProfileImageUrl;
     private String lastMessage;

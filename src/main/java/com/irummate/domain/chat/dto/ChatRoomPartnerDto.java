@@ -4,6 +4,7 @@ import com.irummate.domain.chat.entity.ChatRoomStatus;
 
 public record ChatRoomPartnerDto(
         Long roomId,
+        Long partnerId,
         String partnerName,
         String partnerProfileImageUrl,
         ChatRoomStatus status
