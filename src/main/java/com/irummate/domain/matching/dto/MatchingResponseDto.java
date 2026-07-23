@@ -27,6 +27,9 @@ public class MatchingResponseDto {
     // 자기소개
     private String introduce;
 
+    // 프로필 이미지 URL
+    private String imageUrl;
+
     // 학과, 학번
     private String department;
 

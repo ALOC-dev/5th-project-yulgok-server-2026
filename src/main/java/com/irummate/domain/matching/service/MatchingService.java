@@ -237,6 +237,7 @@ public class MatchingService {
                     .gender(other.getUserDetails().getGender())
                     .age(other.getUserDetails().getAge())
                     .introduce(other.getUserPreferences().getIntroduce())
+                    .imageUrl(other.getProfileImageUrl())
                     .department(other.getUserDetails().getDepartment())
                     .matchPercentage(matchRequest.getMatchPercentage())
                     .matchStatus(matchRequest.getUserLow().equals(other)

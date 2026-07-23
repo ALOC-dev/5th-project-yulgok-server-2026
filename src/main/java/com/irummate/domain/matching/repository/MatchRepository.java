@@ -77,11 +77,12 @@ JOIN FETCH uh.userDetails
 JOIN FETCH uh.userPreferences
 WHERE (
     mr.userLow.id = :userId
+    AND mr.userLowStatus <> com.irummate.domain.matching.entity.MatchStatus.CLOSED
+    AND mr.userHighStatus <> com.irummate.domain.matching.entity.MatchStatus.CLOSED
     AND (
         mr.userLowStatus NOT IN (
             com.irummate.domain.matching.entity.MatchStatus.NONE,
-            com.irummate.domain.matching.entity.MatchStatus.REJECTED,
-            com.irummate.domain.matching.entity.MatchStatus.CLOSED
+            com.irummate.domain.matching.entity.MatchStatus.REJECTED
         )
         OR (
             mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
@@ -91,11 +92,12 @@ WHERE (
 )
 OR (
     mr.userHigh.id = :userId
+    AND mr.userLowStatus <> com.irummate.domain.matching.entity.MatchStatus.CLOSED
+    AND mr.userHighStatus <> com.irummate.domain.matching.entity.MatchStatus.CLOSED
     AND (
         mr.userHighStatus NOT IN (
             com.irummate.domain.matching.entity.MatchStatus.NONE,
-            com.irummate.domain.matching.entity.MatchStatus.REJECTED,
-            com.irummate.domain.matching.entity.MatchStatus.CLOSED
+            com.irummate.domain.matching.entity.MatchStatus.REJECTED
         )
         OR (
             mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
