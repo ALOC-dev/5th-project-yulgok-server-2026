@@ -44,6 +44,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
             @ApiResponse(responseCode = "403", description = "인증 또는 설문 작성이 완료되지 않았습니다.")
     })
+    @RequiresMatchDate
     @RequiresSurvey
     @RequiresCertification
     @GetMapping("/status")
