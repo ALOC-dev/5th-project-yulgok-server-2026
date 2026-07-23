@@ -15,6 +15,7 @@ import com.irummate.domain.chat.entity.ChatRoom;
 import com.irummate.domain.chat.entity.ChatRoomStatus;
 import com.irummate.domain.chat.repository.ChatMessageRepository;
 import com.irummate.domain.chat.repository.ChatRoomRepository;
+import com.irummate.domain.matching.entity.MatchStatus;
 import com.irummate.domain.user.entity.UserStatus;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
@@ -95,12 +96,24 @@ public class ChatService {
                             lastMessage == null ? null : lastMessage.lastMessageTime(),
                             unreadCount.intValue(),
                             room.status(),
-                            toCardStatus(room.myMatchStatus(), room.partnerMatchStatus())
+                            toCardStatus(room.myMatchStatus(), room.partnerMatchStatus()),
+                            isConfirmedByMe(room.myMatchStatus()),
+                            canConfirm(room.myMatchStatus(), room.partnerMatchStatus())
                     );
                 })
                 .toList();
 
         return new ChatRoomsResponseDto(rooms);
+    }
+
+    private boolean isConfirmedByMe(MatchStatus myMatchStatus) {
+        return myMatchStatus == MatchStatus.FINAL_CONFIRMED;
+    }
+
+    private boolean canConfirm(MatchStatus myMatchStatus, MatchStatus partnerMatchStatus) {
+        return myMatchStatus == MatchStatus.HEART
+                && (partnerMatchStatus == MatchStatus.HEART
+                || partnerMatchStatus == MatchStatus.FINAL_CONFIRMED);
     }
 
     @Transactional(readOnly = true)

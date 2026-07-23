@@ -20,4 +20,6 @@ public class ChatRoomResponseDto { //JSON 응답 Key 설정
     private Integer unreadCount;
     private ChatRoomStatus status;
     private MatchCardStatus matchStatus;
+    private Boolean confirmedByMe;
+    private Boolean canConfirm;
 }
