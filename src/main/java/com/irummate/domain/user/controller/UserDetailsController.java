@@ -2,6 +2,7 @@ package com.irummate.domain.user.controller;
 
 import com.irummate.domain.user.dto.UserDetailsRequestDto;
 import com.irummate.domain.user.dto.UserDetailsResponseDto;
+import com.irummate.domain.user.dto.UserDetailsUpdateRequestDto;
 import com.irummate.domain.user.dto.UserProfileResponseDto;
 import com.irummate.domain.user.dto.UserProfileUpdateRequestDto;
 import com.irummate.domain.user.dto.UserProfileUpdateResponseDto;
@@ -79,6 +80,16 @@ public class UserDetailsController {
         // 2. 새로 생성된 데이터이므로 HTTP 상태코드 201(CREATED)로 응답합니다.
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(GlobalApiResponse.success(HttpStatus.CREATED, "추가 정보가 등록되었습니다.", response));
+    }
+
+    @PatchMapping("/details")
+    public ResponseEntity<GlobalApiResponse<UserDetailsResponseDto>> updateDetails(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody UserDetailsUpdateRequestDto request
+    ) {
+        UserDetailsResponseDto response = userDetailsService.updateDetails(userId, request);
+
+        return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "기본 정보 수정 성공", response));
     }
 
     @DeleteMapping("/me")

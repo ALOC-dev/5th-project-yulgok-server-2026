@@ -51,5 +51,26 @@ public class UserDetails {
         this.phoneNumber = phoneNumber;
     }
 
+    public void update(String realName, String studentId, Integer age, String gender, String department, String phoneNumber) {
+        if (realName != null) {
+            this.realName = realName;
+        }
+        if (studentId != null) {
+            this.studentId = studentId;
+        }
+        if (age != null) {
+            this.age = age;
+        }
+        if (gender != null) {
+            this.gender = gender;
+        }
+        if (department != null) {
+            this.department = department;
+        }
+        if (phoneNumber != null) {
+            this.phoneNumber = phoneNumber;
+        }
+    }
+
 
 }

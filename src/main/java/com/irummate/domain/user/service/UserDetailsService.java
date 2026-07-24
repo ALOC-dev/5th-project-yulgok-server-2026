@@ -2,6 +2,7 @@ package com.irummate.domain.user.service;
 
 import com.irummate.domain.user.dto.UserDetailsRequestDto;
 import com.irummate.domain.user.dto.UserDetailsResponseDto;
+import com.irummate.domain.user.dto.UserDetailsUpdateRequestDto;
 import com.irummate.domain.user.dto.UserProfileResponseDto;
 import com.irummate.domain.user.dto.UserProfileUpdateRequestDto;
 import com.irummate.domain.user.dto.UserProfileUpdateResponseDto;
@@ -82,6 +83,25 @@ public class UserDetailsService {
     /**
      * 유저 본인의 통합 프로필 정보를 조회합니다
      */
+    @Transactional
+    public UserDetailsResponseDto updateDetails(Long userId, UserDetailsUpdateRequestDto request) {
+        Long userPk = Long.valueOf(userId);
+
+        UserDetails userDetails = userDetailsRepository.findById(userPk)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        userDetails.update(
+                request.getRealName(),
+                request.getStudentId(),
+                request.getAge(),
+                request.getGender(),
+                request.getDepartment(),
+                request.getPhoneNumber()
+        );
+
+        return toResponse(userDetails);
+    }
+
     public UserProfileResponseDto getProfile(Long userId) {
         Long userPk = Long.valueOf(userId);
         // 1. 기본 유저 정보(이메일, 닉네임 등)를 DB에서 찾습니다.
