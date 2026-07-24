@@ -89,7 +89,7 @@ public class GlobalExceptionController {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<GlobalApiResponse<?>> handleBusinessException(BusinessException e){
 
-        log.warn("BusinessException: {}", e.getMessage(), e);
+        log.warn("BusinessException: {}", e.getMessage());
 
         ErrorCode errorCode = e.getErrorCode();
 

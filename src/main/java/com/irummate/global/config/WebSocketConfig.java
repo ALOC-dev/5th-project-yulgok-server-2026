@@ -76,7 +76,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     String token = resolveToken(accessor);
 
-                    if (token == null || !jwtTokenProvider.validateToken(token)) {
+                    if (token == null || !jwtTokenProvider.validateAccessToken(token)) {
                         throw new IllegalArgumentException("웹소켓 인증에 실패했습니다.");
                     }
 
