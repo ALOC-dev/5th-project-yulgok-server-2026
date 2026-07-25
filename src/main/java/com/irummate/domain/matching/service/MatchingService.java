@@ -202,6 +202,7 @@ public class MatchingService {
         }
 
         targetMatchRequest.updateStatusOf(userId, MatchStatus.REJECTED);
+        chatService.closeChatRoomByMatchRequestId(targetMatchRequest.getId());
     }
 
 

@@ -1,5 +1,6 @@
 package com.irummate.domain.admin.controller;
 
+import com.irummate.domain.admin.dto.AdminUserDetailResponseDto;
 import com.irummate.domain.admin.dto.AdminUserResponseDto;
 import com.irummate.domain.admin.dto.AdminUsersResponseDto;
 import com.irummate.domain.admin.service.AdminUserService;
@@ -35,6 +36,19 @@ public class AdminUserController {
 
         return ResponseEntity.ok(
                 GlobalApiResponse.success(HttpStatus.OK, "회원 목록 조회 성공", responseDto)
+        );
+    }
+
+    @GetMapping("/{userId}")
+    @RequiresAuth(roles = AuthRole.ADMIN)
+    public ResponseEntity<GlobalApiResponse<AdminUserDetailResponseDto>> getUser(
+            @AuthenticationPrincipal Long adminUserId,
+            @PathVariable String userId
+    ) {
+        AdminUserDetailResponseDto responseDto = adminUserService.getUser(userId);
+
+        return ResponseEntity.ok(
+                GlobalApiResponse.success(HttpStatus.OK, "회원 상세 조회 성공", responseDto)
         );
     }
 

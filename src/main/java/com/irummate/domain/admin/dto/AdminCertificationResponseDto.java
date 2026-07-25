@@ -13,6 +13,8 @@ public class AdminCertificationResponseDto {
 
     private String certificationId;
     private String userId;
+    private String userRealName;
+    private String userNickname;
     private String semester;
     private String imageURL;
     private String status;
@@ -28,6 +30,8 @@ public class AdminCertificationResponseDto {
         return new AdminCertificationResponseDto(
                 certificationId,
                 userId,
+                certification.getUser().getUserDetails() == null ? null : certification.getUser().getUserDetails().getRealName(),
+                certification.getUser().getNickname(),
                 certification.getSemester(),
                 imageURL,
                 certification.getCertificationStatus().name(),

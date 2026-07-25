@@ -1,7 +1,10 @@
 package com.irummate.domain.admin.service;
 
+import com.irummate.domain.admin.dto.AdminUserDetailResponseDto;
 import com.irummate.domain.admin.dto.AdminUserResponseDto;
 import com.irummate.domain.admin.dto.AdminUsersResponseDto;
+import com.irummate.domain.certification.entity.Certification;
+import com.irummate.domain.certification.repository.CertificationRepository;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
@@ -23,6 +26,7 @@ public class AdminUserService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final UsersRepository usersRepository;
+    private final CertificationRepository certificationRepository;
     private final HashIdsUtils hashIdsUtils;
 
     @Transactional(readOnly = true)
@@ -49,6 +53,17 @@ public class AdminUserService {
                 usersPage.getTotalPages(),
                 usersPage.hasNext()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public AdminUserDetailResponseDto getUser(String userId) {
+        Long decodedUserId = decodeUserId(userId);
+        Users user = getUser(decodedUserId);
+        Certification latestCertification = certificationRepository
+                .findTopByUser_IdOrderByCreatedAtDesc(decodedUserId)
+                .orElse(null);
+
+        return AdminUserDetailResponseDto.from(user, userId, latestCertification);
     }
 
     @Transactional

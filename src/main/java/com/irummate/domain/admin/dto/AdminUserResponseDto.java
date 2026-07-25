@@ -1,7 +1,6 @@
 package com.irummate.domain.admin.dto;
 
 import com.irummate.domain.user.entity.Users;
-import com.irummate.global.util.HashIdsUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -14,6 +13,7 @@ public class AdminUserResponseDto {
     private String userId;
     private String email;
     private String nickname;
+    private String realName;
     private String profileImageUrl;
     private String role;
     private String status;
@@ -24,6 +24,7 @@ public class AdminUserResponseDto {
                 userId,
                 user.getEmail(),
                 user.getNickname(),
+                user.getUserDetails() == null ? null : user.getUserDetails().getRealName(),
                 user.getProfileImageUrl(),
                 user.getRole().name(),
                 user.getStatus().name(),

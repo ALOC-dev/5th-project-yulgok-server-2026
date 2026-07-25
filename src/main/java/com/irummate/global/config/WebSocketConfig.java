@@ -108,6 +108,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             if (!chatRoomRepository.existsByRoomIdAndParticipantId(roomId, userId)) {
                 throw new IllegalArgumentException("구독 권한이 없는 채팅방입니다.");
             }
+
+            return;
         }
 
         if (destination.startsWith(USER_QUEUE_PREFIX)) {
@@ -116,7 +118,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             if (!destinationUserId.equals(userId)) {
                 throw new IllegalArgumentException("구독 권한이 없는 개인 알림입니다.");
             }
+
+            return;
         }
+
+        throw new IllegalArgumentException("Invalid subscription destination.");
     }
 
     private Long resolveUserId(Principal principal) {
