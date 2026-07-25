@@ -36,7 +36,7 @@ public interface UserPreferencesRepository extends JpaRepository<UserPreferences
         SELECT
             up.user_id AS userId,
             ROUND(
-                (GREATEST(0, 1 - ((up.lifestyle_vector <-> CAST(:vector AS vector)) / 3.0)) * 100)::numeric,
+                (50 + (GREATEST(0, 1 - ((up.lifestyle_vector <-> CAST(:vector AS vector)) / 3.0)) * 50))::numeric,
                 1
             )::double precision AS matchPercentage
         FROM user_preferences up
@@ -71,7 +71,7 @@ public interface UserPreferencesRepository extends JpaRepository<UserPreferences
         SELECT
             up.user_id AS userId,
             ROUND(
-                (GREATEST(0, 1 - ((up.lifestyle_vector <-> CAST(:vector AS vector)) / 3.0)) * 100)::numeric,
+                (50 + (GREATEST(0, 1 - ((up.lifestyle_vector <-> CAST(:vector AS vector)) / 3.0)) * 50))::numeric,
                 1
             )::double precision AS matchPercentage
         FROM user_preferences up
