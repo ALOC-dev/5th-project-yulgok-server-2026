@@ -244,6 +244,7 @@ public class MatchingService {
                     .matchStatus(matchRequest.getUserLow().equals(other)
                             ?toCardStatus(matchRequest.getUserHighStatus(),matchRequest.getUserLowStatus())
                             :toCardStatus(matchRequest.getUserLowStatus(),matchRequest.getUserHighStatus()))
+                    .smokingStatus(other.getUserPreferences().getSmokingStatus())
                     .preferredAnswers(me.getUserPreferences().getVisibleProfileFields().stream()
                             .distinct()
                             .limit(3)

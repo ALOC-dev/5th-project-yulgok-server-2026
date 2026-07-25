@@ -42,6 +42,9 @@ public class MatchingResponseDto {
     // 매칭된 날짜
     private LocalDateTime matchDate;
 
+    // 흡연 여부
+    private Integer smokingStatus;
+
     // 요청자 선택 응답
     List<PreferredAnswerDto> preferredAnswers;
 

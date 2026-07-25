@@ -44,23 +44,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         if (token != null && jwtTokenProvider.validateAccessToken(token)) {
-            Claims claims = jwtTokenProvider.parseClaims(token);
-            Long userId = hashIdsUtils.decode(claims.getSubject());
-            String role = claims.get("role", String.class);
+            try {
+                Claims claims = jwtTokenProvider.parseClaims(token);
+                Long userId = hashIdsUtils.decode(claims.getSubject());
+                String role = claims.get("role", String.class);
 
-            boolean blocked = usersRepository.findById(userId)
-                    .map(user -> user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.WITHDRAWN)
-                    .orElse(true);
+                boolean blocked = usersRepository.findById(userId)
+                        .map(user -> user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.WITHDRAWN)
+                        .orElse(true);
 
-            if (!blocked) {
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userId,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+                if (!blocked) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userId,
+                                    null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                            );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (RuntimeException e) {
+                SecurityContextHolder.clearContext();
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
         }
 
