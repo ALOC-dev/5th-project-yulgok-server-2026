@@ -23,12 +23,16 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
         mr.userLow.id = :userId
         AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
         AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.RECOMMENDED
+        AND mr.userHigh.role = com.irummate.domain.user.entity.UserRole.USER
+        AND mr.userHigh.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
         AND mr.userHighPreferences.smokingStatus = :smokingStatus
     )
     OR (
         mr.userHigh.id = :userId
         AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
         AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.RECOMMENDED
+        AND mr.userLow.role = com.irummate.domain.user.entity.UserRole.USER
+        AND mr.userLow.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
         AND mr.userLowPreferences.smokingStatus = :smokingStatus
     )
     ORDER BY mr.matchPercentage DESC
@@ -48,12 +52,16 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
         mr.userLow.id = :userId
         AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
         AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.RECOMMENDED
+        AND mr.userHigh.role = com.irummate.domain.user.entity.UserRole.USER
+        AND mr.userHigh.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
         
     )
     OR (
         mr.userHigh.id = :userId
         AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.NONE
         AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.RECOMMENDED
+        AND mr.userLow.role = com.irummate.domain.user.entity.UserRole.USER
+        AND mr.userLow.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
     )
     ORDER BY mr.matchPercentage DESC
 """)

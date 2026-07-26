@@ -5,7 +5,9 @@ import com.irummate.domain.matching.dto.MatchConfirmRequestDto;
 import com.irummate.domain.matching.dto.MatchingRequestDto;
 import com.irummate.domain.matching.dto.MatchingResponseDto;
 import com.irummate.domain.matching.service.MatchingService;
+import com.irummate.global.aop.AuthRole;
 import com.irummate.global.aop.RequiresCertification;
+import com.irummate.global.aop.RequiresAuth;
 import com.irummate.global.aop.RequiresMatchDate;
 import com.irummate.global.aop.RequiresSurvey;
 import com.irummate.global.exception.BusinessException;
@@ -44,6 +46,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "401", description = "인증이 필요합니다."),
             @ApiResponse(responseCode = "403", description = "인증 또는 설문 작성이 완료되지 않았습니다.")
     })
+    @RequiresAuth(roles = AuthRole.USER)
     @RequiresMatchDate
     @RequiresSurvey
     @RequiresCertification
@@ -71,6 +74,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "404", description = "유저 또는 설문 정보를 찾을 수 없습니다."),
             @ApiResponse(responseCode = "409", description = "이미 최종 매칭되었거나 오늘 이미 매칭 추천을 완료했습니다.")
     })
+    @RequiresAuth(roles = AuthRole.USER)
     @RequiresSurvey
     @RequiresCertification
     @RequiresMatchDate
@@ -91,6 +95,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없습니다."),
             @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 하트 전달 또는 거절을 할 수 없습니다.")
     })
+    @RequiresAuth(roles = AuthRole.USER)
     @RequiresSurvey
     @RequiresCertification
     @RequiresMatchDate
@@ -122,6 +127,7 @@ public class MatchingController {
             @ApiResponse(responseCode = "404", description = "매칭 요청을 찾을 수 없습니다."),
             @ApiResponse(responseCode = "409", description = "현재 매칭 상태에서는 최종 확정을 할 수 없습니다.")
     })
+    @RequiresAuth(roles = AuthRole.USER)
     @RequiresSurvey
     @RequiresCertification
     @RequiresMatchDate
@@ -134,6 +140,7 @@ public class MatchingController {
         return ResponseEntity.ok(GlobalApiResponse.success(HttpStatus.OK, "매칭 확정 전달 성공", null));
     }
 
+    @RequiresAuth(roles = AuthRole.USER)
     @RequiresSurvey
     @RequiresCertification
     @GetMapping("/requests/{receiverId}/contact")
