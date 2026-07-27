@@ -17,6 +17,7 @@ import com.irummate.global.exception.ErrorCode;
 import com.irummate.global.util.HashIdsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -435,7 +436,14 @@ public class MatchingService {
                         candidate.matchPercentage()
                 );
 
-                matchRepository.save(newMatchRequest);
+                try {
+                    matchRepository.saveAndFlush(newMatchRequest);
+                } catch (DataIntegrityViolationException e) {
+                    throw new BusinessException(
+                            ErrorCode.MATCH_ALREADY_REROLLED_TODAY,
+                            "매칭이 겹쳤어요. 다시 시도해 주세요."
+                    );
+                }
             }
         }
 
