@@ -521,6 +521,8 @@ public class MatchingService {
      */
     @Transactional
     public void closeAllMatchRequestsByUserId(Long userId){
+        chatService.closeChatRoomsByUserId(userId);
+
         List<MatchRequests> myMatchRequests = matchRepository.findAllByUserId(userId);
 
         for(MatchRequests matchRequest : myMatchRequests){
