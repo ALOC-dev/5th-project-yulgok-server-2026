@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserProfileUpdateRequestDto {
 
+    private static final String PROFILE_AVATAR_PATTERN = "^profile-avatar-([1-9]|[1-4][0-9]|5[0-3])\\.png$";
+
     private String nickname;
     private String profileImageUrl;
 
@@ -18,6 +20,6 @@ public class UserProfileUpdateRequestDto {
 
     @AssertTrue(message = "profileImageUrl은 공백일 수 없습니다.")
     public boolean isProfileImageUrlValid() {
-        return profileImageUrl == null || !profileImageUrl.isBlank();
+        return profileImageUrl == null || profileImageUrl.matches(PROFILE_AVATAR_PATTERN);
     }
 }

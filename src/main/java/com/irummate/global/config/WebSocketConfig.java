@@ -1,6 +1,8 @@
 package com.irummate.global.config;
 
 import com.irummate.domain.chat.repository.ChatRoomRepository;
+import com.irummate.domain.user.entity.UserStatus;
+import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.jwt.JwtTokenProvider;
 import com.irummate.global.jwt.WebSocketPrincipal;
 import com.irummate.global.util.HashIdsUtils;
@@ -30,13 +32,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final ChatRoomRepository chatRoomRepository;
+    private final UsersRepository usersRepository;
     private final HashIdsUtils hashIdsUtils;
 
     public WebSocketConfig(JwtTokenProvider jwtTokenProvider,
-                           ChatRoomRepository chatRoomRepository,
-                           HashIdsUtils hashIdsUtils) {
+                            ChatRoomRepository chatRoomRepository,
+                            UsersRepository usersRepository,
+                            HashIdsUtils hashIdsUtils) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.chatRoomRepository = chatRoomRepository;
+        this.usersRepository = usersRepository;
         this.hashIdsUtils = hashIdsUtils;
     }
 
@@ -82,6 +87,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
                     Claims claims = jwtTokenProvider.parseClaims(token);
                     Long userId = hashIdsUtils.decode(claims.getSubject());
+
+                    if (!isActiveUser(userId)) {
+                        throw new IllegalArgumentException("WebSocket user is not active.");
+                    }
+
                     accessor.setUser(new WebSocketPrincipal(userId));
                 }
 
@@ -92,6 +102,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 return message;
             }
         });
+    }
+
+    private boolean isActiveUser(Long userId) {
+        return usersRepository.findById(userId)
+                .map(user -> user.getStatus() == UserStatus.ACTIVE)
+                .orElse(false);
     }
 
     private void validateSubscribe(StompHeaderAccessor accessor) {

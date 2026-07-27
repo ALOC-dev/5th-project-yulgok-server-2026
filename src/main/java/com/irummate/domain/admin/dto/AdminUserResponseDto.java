@@ -14,6 +14,7 @@ public class AdminUserResponseDto {
     private String email;
     private String nickname;
     private String realName;
+    private String gender;
     private String profileImageUrl;
     private String role;
     private String status;
@@ -25,6 +26,7 @@ public class AdminUserResponseDto {
                 user.getEmail(),
                 user.getNickname(),
                 user.getUserDetails() == null ? null : user.getUserDetails().getRealName(),
+                user.getUserDetails() == null ? null : user.getUserDetails().getGender(),
                 user.getProfileImageUrl(),
                 user.getRole().name(),
                 user.getStatus().name(),
