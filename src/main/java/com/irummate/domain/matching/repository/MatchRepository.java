@@ -16,6 +16,45 @@ import com.irummate.domain.matching.entity.MatchRequests;
 @Repository
 public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
 
+    @Query(value = """
+            SELECT COALESCE(SUM(CASE WHEN user_low_status = 'HEART' THEN 1 ELSE 0 END), 0)
+                 + COALESCE(SUM(CASE WHEN user_high_status = 'HEART' THEN 1 ELSE 0 END), 0)
+            FROM match_requests
+            """, nativeQuery = true)
+    long countHeartSent();
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM match_requests
+            WHERE user_low_status = 'HEART'
+              AND user_high_status = 'HEART'
+            """, nativeQuery = true)
+    long countHeartMatched();
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM match_requests
+            WHERE (user_low_status = 'FINAL_CONFIRMED' AND user_high_status = 'HEART')
+               OR (user_high_status = 'FINAL_CONFIRMED' AND user_low_status = 'HEART')
+            """, nativeQuery = true)
+    long countConfirmPending();
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM match_requests
+            WHERE user_low_status = 'FINAL_CONFIRMED'
+              AND user_high_status = 'FINAL_CONFIRMED'
+            """, nativeQuery = true)
+    long countFinalConfirmed();
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM match_requests
+            WHERE user_low_status = 'CLOSED'
+               OR user_high_status = 'CLOSED'
+            """, nativeQuery = true)
+    long countClosed();
+
     @Query("""
     SELECT mr
     FROM MatchRequests mr

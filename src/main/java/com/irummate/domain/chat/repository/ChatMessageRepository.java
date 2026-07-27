@@ -13,6 +13,8 @@ import java.util.Optional;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
+    long countByCreatedAtGreaterThanEqual(java.time.LocalDateTime createdAt);
+
     // 특정 채팅방의 메시지를 최신순으로 조회한다.
     List<ChatMessage> findByRoomIdOrderByIdDesc(Long roomId, Pageable pageable);
 

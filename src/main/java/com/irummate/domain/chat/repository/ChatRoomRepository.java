@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
+    long countByStatus(com.irummate.domain.chat.entity.ChatRoomStatus status);
+
     // 매칭 요청 하나에 채팅방이 하나만 생성되도록 확인할 때 사용한다.
     Optional<ChatRoom> findByMatchRequestId(Long matchRequestId);
 
