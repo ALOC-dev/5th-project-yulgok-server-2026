@@ -5,6 +5,7 @@ import com.irummate.domain.admin.dto.AdminUserResponseDto;
 import com.irummate.domain.admin.dto.AdminUsersResponseDto;
 import com.irummate.domain.certification.entity.Certification;
 import com.irummate.domain.certification.repository.CertificationRepository;
+import com.irummate.domain.matching.service.MatchingService;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
@@ -28,6 +29,7 @@ public class AdminUserService {
     private final UsersRepository usersRepository;
     private final CertificationRepository certificationRepository;
     private final HashIdsUtils hashIdsUtils;
+    private final MatchingService matchingService;
 
     @Transactional(readOnly = true)
     public AdminUsersResponseDto getUsers(int page, int size) {
@@ -71,6 +73,9 @@ public class AdminUserService {
         Users user = getUser(decodeUserId(userId));
 
         user.ban();
+
+        // 정지된 계정과 연관된 모든 match request를 CLOSED 처리합니다. (탈퇴 처리와 대칭)
+        matchingService.closeAllMatchRequestsByUserId(user.getId());
 
         return AdminUserResponseDto.from(user, userId);
     }

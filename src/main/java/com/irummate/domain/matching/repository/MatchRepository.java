@@ -85,6 +85,8 @@ JOIN FETCH uh.userDetails
 JOIN FETCH uh.userPreferences
 WHERE (
     mr.userLow.id = :userId
+    AND mr.userHigh.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+    AND mr.userHigh.role = com.irummate.domain.user.entity.UserRole.USER
     AND mr.userLowStatus <> com.irummate.domain.matching.entity.MatchStatus.CLOSED
     AND mr.userHighStatus <> com.irummate.domain.matching.entity.MatchStatus.CLOSED
     AND (
@@ -100,6 +102,8 @@ WHERE (
 )
 OR (
     mr.userHigh.id = :userId
+    AND mr.userLow.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+    AND mr.userLow.role = com.irummate.domain.user.entity.UserRole.USER
     AND mr.userLowStatus <> com.irummate.domain.matching.entity.MatchStatus.CLOSED
     AND mr.userHighStatus <> com.irummate.domain.matching.entity.MatchStatus.CLOSED
     AND (

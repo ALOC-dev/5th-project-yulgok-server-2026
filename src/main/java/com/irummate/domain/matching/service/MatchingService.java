@@ -10,6 +10,8 @@ import com.irummate.domain.matching.repository.MatchRepository;
 import com.irummate.domain.survey.entity.UserPreferences;
 import com.irummate.domain.survey.repository.UserPreferencesRepository;
 import com.irummate.domain.user.entity.UserDetails;
+import com.irummate.domain.user.entity.UserRole;
+import com.irummate.domain.user.entity.UserStatus;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UsersRepository;
 import com.irummate.global.exception.BusinessException;
@@ -84,6 +86,8 @@ public class MatchingService {
         MatchRequests myMatchRequest = matchRepository.findByIds(userId, receiverId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
 
+        validateReceiverAvailable(myMatchRequest, receiverId, ErrorCode.NOT_CONFIRMABLE_STATUS);
+
         MatchStatus myStatus = myMatchRequest.getStatusOf(userId);
         MatchStatus otherStatus = myMatchRequest.getStatusOf(receiverId);
 
@@ -147,6 +151,7 @@ public class MatchingService {
         MatchRequests myMatchRequest = matchRepository.findByIds(userId, receiverId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
 
+        validateReceiverAvailable(myMatchRequest, receiverId, ErrorCode.NOT_HEARTABLE_STATUS);
 
         MatchStatus myStatus = myMatchRequest.getStatusOf(userId);
         MatchStatus otherStatus = myMatchRequest.getStatusOf(receiverId);
@@ -182,6 +187,8 @@ public class MatchingService {
 
         MatchRequests targetMatchRequest = matchRepository.findByIds(userId, receiverId)
                 .orElseThrow(()->new BusinessException(ErrorCode.MATCH_REQUEST_NOT_FOUND));
+
+        validateReceiverAvailable(targetMatchRequest, receiverId, ErrorCode.NOT_REJECTABLE_STATUS);
 
         MatchStatus myStatus = targetMatchRequest.getStatusOf(userId);
         MatchStatus otherStatus = targetMatchRequest.getStatusOf(receiverId);
@@ -478,6 +485,21 @@ public class MatchingService {
         newMatchRequest.updateStatusOf(myUserId, MatchStatus.RECOMMENDED);
 
         return newMatchRequest;
+    }
+
+
+    /**
+     * 역할: match request 상대방(receiver)이 여전히 매칭 가능한 유저인지 검증합니다.
+     * 상대가 정지/탈퇴 등으로 ACTIVE·USER가 아니면 액션을 막습니다. (상태 변화에 대한 방어)
+     */
+    private void validateReceiverAvailable(MatchRequests matchRequest, Long receiverId, ErrorCode errorCode) {
+        Users receiver = matchRequest.getUserLow().getId().equals(receiverId)
+                ? matchRequest.getUserLow()
+                : matchRequest.getUserHigh();
+
+        if (receiver.getStatus() != UserStatus.ACTIVE || receiver.getRole() != UserRole.USER) {
+            throw new BusinessException(errorCode);
+        }
     }
 
 
