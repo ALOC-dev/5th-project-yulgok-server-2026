@@ -130,7 +130,6 @@ public class MatchingController {
     @RequiresAuth(roles = AuthRole.USER)
     @RequiresSurvey
     @RequiresCertification
-    @RequiresMatchDate
     @PatchMapping("/requests/confirm")
     public ResponseEntity<GlobalApiResponse<?>> sendConfirm(
             @AuthenticationPrincipal Long userId,
