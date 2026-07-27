@@ -17,41 +17,72 @@ import com.irummate.domain.matching.entity.MatchRequests;
 public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
 
     @Query(value = """
-            SELECT COALESCE(SUM(CASE WHEN user_low_status = 'HEART' THEN 1 ELSE 0 END), 0)
-                 + COALESCE(SUM(CASE WHEN user_high_status = 'HEART' THEN 1 ELSE 0 END), 0)
-            FROM match_requests
+            SELECT COALESCE(SUM(CASE WHEN mr.user_low_status = 'HEART' THEN 1 ELSE 0 END), 0)
+                 + COALESCE(SUM(CASE WHEN mr.user_high_status = 'HEART' THEN 1 ELSE 0 END), 0)
+            FROM match_requests mr
+            JOIN users ul ON ul.id = mr.user_low_id
+            JOIN users uh ON uh.id = mr.user_high_id
+            WHERE ul.role = 'USER'
+              AND ul.status = 'ACTIVE'
+              AND uh.role = 'USER'
+              AND uh.status = 'ACTIVE'
             """, nativeQuery = true)
     long countHeartSent();
 
     @Query(value = """
             SELECT COUNT(*)
-            FROM match_requests
-            WHERE user_low_status = 'HEART'
-              AND user_high_status = 'HEART'
+            FROM match_requests mr
+            JOIN users ul ON ul.id = mr.user_low_id
+            JOIN users uh ON uh.id = mr.user_high_id
+            WHERE mr.user_low_status = 'HEART'
+              AND mr.user_high_status = 'HEART'
+              AND ul.role = 'USER'
+              AND ul.status = 'ACTIVE'
+              AND uh.role = 'USER'
+              AND uh.status = 'ACTIVE'
             """, nativeQuery = true)
     long countHeartMatched();
 
     @Query(value = """
             SELECT COUNT(*)
-            FROM match_requests
-            WHERE (user_low_status = 'FINAL_CONFIRMED' AND user_high_status = 'HEART')
-               OR (user_high_status = 'FINAL_CONFIRMED' AND user_low_status = 'HEART')
+            FROM match_requests mr
+            JOIN users ul ON ul.id = mr.user_low_id
+            JOIN users uh ON uh.id = mr.user_high_id
+            WHERE (
+                    (mr.user_low_status = 'FINAL_CONFIRMED' AND mr.user_high_status = 'HEART')
+                 OR (mr.user_high_status = 'FINAL_CONFIRMED' AND mr.user_low_status = 'HEART')
+            )
+              AND ul.role = 'USER'
+              AND ul.status = 'ACTIVE'
+              AND uh.role = 'USER'
+              AND uh.status = 'ACTIVE'
             """, nativeQuery = true)
     long countConfirmPending();
 
     @Query(value = """
             SELECT COUNT(*)
-            FROM match_requests
-            WHERE user_low_status = 'FINAL_CONFIRMED'
-              AND user_high_status = 'FINAL_CONFIRMED'
+            FROM match_requests mr
+            JOIN users ul ON ul.id = mr.user_low_id
+            JOIN users uh ON uh.id = mr.user_high_id
+            WHERE mr.user_low_status = 'FINAL_CONFIRMED'
+              AND mr.user_high_status = 'FINAL_CONFIRMED'
+              AND ul.role = 'USER'
+              AND ul.status = 'ACTIVE'
+              AND uh.role = 'USER'
+              AND uh.status = 'ACTIVE'
             """, nativeQuery = true)
     long countFinalConfirmed();
 
     @Query(value = """
             SELECT COUNT(*)
-            FROM match_requests
-            WHERE user_low_status = 'CLOSED'
-               OR user_high_status = 'CLOSED'
+            FROM match_requests mr
+            JOIN users ul ON ul.id = mr.user_low_id
+            JOIN users uh ON uh.id = mr.user_high_id
+            WHERE (mr.user_low_status = 'CLOSED' OR mr.user_high_status = 'CLOSED')
+              AND ul.role = 'USER'
+              AND ul.status = 'ACTIVE'
+              AND uh.role = 'USER'
+              AND uh.status = 'ACTIVE'
             """, nativeQuery = true)
     long countClosed();
 

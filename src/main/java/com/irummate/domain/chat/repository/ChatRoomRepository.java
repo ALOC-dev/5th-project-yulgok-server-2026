@@ -17,6 +17,29 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             SELECT COUNT(cr)
             FROM ChatRoom cr
             JOIN MatchRequests mr ON mr.id = cr.matchRequestId
+            WHERE mr.userLow.role = com.irummate.domain.user.entity.UserRole.USER
+              AND mr.userLow.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+              AND mr.userHigh.role = com.irummate.domain.user.entity.UserRole.USER
+              AND mr.userHigh.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+            """)
+    long countActiveUserRooms();
+
+    @Query("""
+            SELECT COUNT(cr)
+            FROM ChatRoom cr
+            JOIN MatchRequests mr ON mr.id = cr.matchRequestId
+            WHERE cr.status = :status
+              AND mr.userLow.role = com.irummate.domain.user.entity.UserRole.USER
+              AND mr.userLow.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+              AND mr.userHigh.role = com.irummate.domain.user.entity.UserRole.USER
+              AND mr.userHigh.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+            """)
+    long countActiveUserRoomsByStatus(@Param("status") com.irummate.domain.chat.entity.ChatRoomStatus status);
+
+    @Query("""
+            SELECT COUNT(cr)
+            FROM ChatRoom cr
+            JOIN MatchRequests mr ON mr.id = cr.matchRequestId
             WHERE cr.status = :status
               AND (mr.userLow.id = :userId OR mr.userHigh.id = :userId)
             """)

@@ -15,6 +15,31 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     long countByCreatedAtGreaterThanEqual(java.time.LocalDateTime createdAt);
 
+    @Query("""
+            SELECT COUNT(cm)
+            FROM ChatMessage cm
+            JOIN ChatRoom cr ON cr.id = cm.roomId
+            JOIN MatchRequests mr ON mr.id = cr.matchRequestId
+            WHERE mr.userLow.role = com.irummate.domain.user.entity.UserRole.USER
+              AND mr.userLow.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+              AND mr.userHigh.role = com.irummate.domain.user.entity.UserRole.USER
+              AND mr.userHigh.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+            """)
+    long countActiveUserRoomMessages();
+
+    @Query("""
+            SELECT COUNT(cm)
+            FROM ChatMessage cm
+            JOIN ChatRoom cr ON cr.id = cm.roomId
+            JOIN MatchRequests mr ON mr.id = cr.matchRequestId
+            WHERE cm.createdAt >= :createdAt
+              AND mr.userLow.role = com.irummate.domain.user.entity.UserRole.USER
+              AND mr.userLow.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+              AND mr.userHigh.role = com.irummate.domain.user.entity.UserRole.USER
+              AND mr.userHigh.status = com.irummate.domain.user.entity.UserStatus.ACTIVE
+            """)
+    long countActiveUserRoomMessagesByCreatedAtGreaterThanEqual(@Param("createdAt") java.time.LocalDateTime createdAt);
+
     // 특정 채팅방의 메시지를 최신순으로 조회한다.
     List<ChatMessage> findByRoomIdOrderByIdDesc(Long roomId, Pageable pageable);
 

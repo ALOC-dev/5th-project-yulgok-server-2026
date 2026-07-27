@@ -45,11 +45,11 @@ public class AdminMonitoringService {
                         matchRepository.countClosed()
                 ),
                 new AdminMonitoringSummaryResponseDto.ChatSummary(
-                        chatRoomRepository.count(),
-                        chatRoomRepository.countByStatus(ChatRoomStatus.OPEN),
-                        chatRoomRepository.countByStatus(ChatRoomStatus.CLOSED),
-                        chatMessageRepository.count(),
-                        chatMessageRepository.countByCreatedAtGreaterThanEqual(todayStart)
+                        chatRoomRepository.countActiveUserRooms(),
+                        chatRoomRepository.countActiveUserRoomsByStatus(ChatRoomStatus.OPEN),
+                        chatRoomRepository.countActiveUserRoomsByStatus(ChatRoomStatus.CLOSED),
+                        chatMessageRepository.countActiveUserRoomMessages(),
+                        chatMessageRepository.countActiveUserRoomMessagesByCreatedAtGreaterThanEqual(todayStart)
                 ),
                 LocalDateTime.now(SERVICE_ZONE)
         );
