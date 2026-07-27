@@ -12,6 +12,7 @@ import com.irummate.domain.user.entity.UserStatus;
 import com.irummate.domain.user.entity.Users;
 import com.irummate.domain.user.repository.UserDetailsRepository;
 import com.irummate.domain.user.repository.UsersRepository;
+import com.irummate.domain.matching.service.MatchingService;
 import com.irummate.global.config.KakaoProperties;
 import com.irummate.global.exception.BusinessException;
 import com.irummate.global.exception.ErrorCode;
@@ -41,6 +42,7 @@ public class UserDetailsService {
     private final UsersRepository usersRepository;
     private final UserDetailsRepository userDetailsRepository;
     private final KakaoProperties kakaoProperties;
+    private final MatchingService matchingService;
     private final RestTemplate restTemplate = new RestTemplate();
 
     /**
@@ -158,6 +160,9 @@ public class UserDetailsService {
 
         unlinkKakaoUser(user.getOauthId());
         user.withdraw();
+
+        // 탈퇴한 계정과 연관된 모든 match request를 CLOSED 처리합니다.
+        matchingService.closeAllMatchRequestsByUserId(userPk);
     }
 
 

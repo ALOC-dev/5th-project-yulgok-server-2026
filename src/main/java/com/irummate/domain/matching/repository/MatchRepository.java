@@ -154,4 +154,12 @@ List<MatchRequests> findAllVisibleByUserId(@Param("userId") Long userId);
             @Param("userId1") Long userId1,
             @Param("userId2") Long userId2
     );
+
+    @Query("""
+    SELECT mr
+    FROM MatchRequests mr
+    WHERE mr.userLow.id = :userId
+    OR mr.userHigh.id = :userId
+    """)
+    List<MatchRequests> findAllByUserId(@Param("userId") Long userId);
 }
