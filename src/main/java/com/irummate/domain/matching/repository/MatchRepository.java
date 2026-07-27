@@ -56,6 +56,40 @@ public interface MatchRepository extends JpaRepository<MatchRequests, Long> {
     long countClosed();
 
     @Query("""
+            SELECT COUNT(mr)
+            FROM MatchRequests mr
+            WHERE (mr.userLow.id = :userId AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.HEART)
+               OR (mr.userHigh.id = :userId AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.HEART)
+            """)
+    long countHeartSentByUserId(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT COUNT(mr)
+            FROM MatchRequests mr
+            WHERE (mr.userLow.id = :userId AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.HEART)
+               OR (mr.userHigh.id = :userId AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.HEART)
+            """)
+    long countHeartReceivedByUserId(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT COUNT(mr)
+            FROM MatchRequests mr
+            WHERE (mr.userLow.id = :userId OR mr.userHigh.id = :userId)
+              AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.HEART
+              AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.HEART
+            """)
+    long countHeartMatchedByUserId(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT COUNT(mr) > 0
+            FROM MatchRequests mr
+            WHERE (mr.userLow.id = :userId OR mr.userHigh.id = :userId)
+              AND mr.userLowStatus = com.irummate.domain.matching.entity.MatchStatus.FINAL_CONFIRMED
+              AND mr.userHighStatus = com.irummate.domain.matching.entity.MatchStatus.FINAL_CONFIRMED
+            """)
+    boolean existsFinalConfirmedByUserId(@Param("userId") Long userId);
+
+    @Query("""
     SELECT mr
     FROM MatchRequests mr
     WHERE (

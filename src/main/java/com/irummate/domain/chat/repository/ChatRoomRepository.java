@@ -13,6 +13,18 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     long countByStatus(com.irummate.domain.chat.entity.ChatRoomStatus status);
 
+    @Query("""
+            SELECT COUNT(cr)
+            FROM ChatRoom cr
+            JOIN MatchRequests mr ON mr.id = cr.matchRequestId
+            WHERE cr.status = :status
+              AND (mr.userLow.id = :userId OR mr.userHigh.id = :userId)
+            """)
+    long countByParticipantIdAndStatus(
+            @Param("userId") Long userId,
+            @Param("status") com.irummate.domain.chat.entity.ChatRoomStatus status
+    );
+
     // 매칭 요청 하나에 채팅방이 하나만 생성되도록 확인할 때 사용한다.
     Optional<ChatRoom> findByMatchRequestId(Long matchRequestId);
 
