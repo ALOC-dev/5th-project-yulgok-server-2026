@@ -103,8 +103,8 @@ public class MatchingService {
             if(myMatchRequest.isConfirmed()){
                 myMatchRequest.getUserHighPreferences().updateIsMatched();
                 myMatchRequest.getUserLowPreferences().updateIsMatched();
-                chatService.closeChatRoomsByUserId(userId);
-                chatService.closeChatRoomsByUserId(receiverId);
+                chatService.closeChatRoomsByUserIdExceptMatchRequestId(userId, myMatchRequest.getId());
+                chatService.closeChatRoomsByUserIdExceptMatchRequestId(receiverId, myMatchRequest.getId());
 
                 closeOtherMatchRequests(userId, myMatchRequest);
                 closeOtherMatchRequests(receiverId, myMatchRequest);

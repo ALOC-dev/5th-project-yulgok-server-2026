@@ -231,6 +231,15 @@ public class ChatService {
         chatRooms.forEach(ChatRoom::close);
     }
 
+    @Transactional
+    public void closeChatRoomsByUserIdExceptMatchRequestId(Long userId, Long excludedMatchRequestId) {
+        List<ChatRoom> chatRooms = chatRoomRepository.findAllByParticipantId(userId);
+
+        chatRooms.stream()
+                .filter(chatRoom -> !chatRoom.getMatchRequestId().equals(excludedMatchRequestId))
+                .forEach(ChatRoom::close);
+    }
+
     private ChatRoom getChatRoom(Long roomId) {
         return chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
